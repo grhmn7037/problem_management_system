@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة فهم المشكلة: {{ problem.title }}</title>
+
+    <!-- Bootstrap CSS via CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Tahoma', sans-serif;
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+        .form-container {
+            max-width: 750px; /* يمكن تعديل العرض حسب الحاجة */
+            margin: auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        .form-header {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #17a2b8; /* لون Bootstrap info (أزرق سماوي) لهذه الصفحة */
+        }
+        .form-label {
+            font-weight: bold;
+        }
+        textarea.form-control {
+            min-height: 100px; /* ارتفاع أدنى للمناطق النصية */
+        }
+    </style>
+</head>
+<body>
+    <!-- يمكن إضافة شريط التنقل هنا أيضًا للاتساق -->
+    <!-- <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4"> ... </nav> -->
+
+    <div class="container">
+        <div class="form-container">
+            <h1 class="form-header"><i class="fas fa-search-plus"></i> إدارة تفاصيل فهم المشكلة</h1>
+            <h4 class="text-center text-muted mb-4">للمشكلة: "{{ problem.title }}"</h4>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category if category != 'danger' else 'danger' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('manage_understanding', problem_id=problem.id) }}">
+                <div class="mb-3">
+                    <label for="active_listening_notes" class="form-label">ملاحظات الاستماع الفعال:</label>
+                    <textarea class="form-control" id="active_listening_notes" name="active_listening_notes" rows="4" placeholder="سجل هنا ملاحظاتك من جلسات الاستماع، النقاط الرئيسية التي ذكرها المعنيون، مشاعرهم، اهتماماتهم...">{{ (form_data.get('active_listening_notes') if form_data else understanding.active_listening_notes) if understanding else (form_data.get('active_listening_notes', '') if form_data else '') }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="key_questions_asked" class="form-label">الأسئلة الرئيسية المطروحة:</label>
+                    <textarea class="form-control" id="key_questions_asked" name="key_questions_asked" rows="4" placeholder="ما هي الأسئلة الجوهرية التي طرحتها لفهم أبعاد المشكلة؟ (ماذا، من، أين، متى، لماذا، كيف)">{{ (form_data.get('key_questions_asked') if form_data else understanding.key_questions_asked) if understanding else (form_data.get('key_questions_asked', '') if form_data else '') }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="initial_data_sources" class="form-label">مصادر البيانات الأولية:</label>
+                    <textarea class="form-control" id="initial_data_sources" name="initial_data_sources" rows="3" placeholder="ما هي الوثائق، التقارير، الأنظمة، أو الأشخاص الذين رجعت إليهم لجمع معلومات أولية؟">{{ (form_data.get('initial_data_sources') if form_data else understanding.initial_data_sources) if understanding else (form_data.get('initial_data_sources', '') if form_data else '') }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="initial_hypotheses" class="form-label">الفرضيات الأولية:</label>
+                    <textarea class="form-control" id="initial_hypotheses" name="initial_hypotheses" rows="3" placeholder="ما هي افتراضاتك الأولية حول أسباب المشكلة أو طبيعتها قبل التحليل المعمق؟">{{ (form_data.get('initial_hypotheses') if form_data else understanding.initial_hypotheses) if understanding else (form_data.get('initial_hypotheses', '') if form_data else '') }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="stakeholder_feedback_initial" class="form-label">ملاحظات الأطراف المعنية (أولي):</label>
+                    <textarea class="form-control" id="stakeholder_feedback_initial" name="stakeholder_feedback_initial" rows="3" placeholder="ما هي ردود الأفعال أو الملاحظات التي تلقيتها من الأطراف المعنية بعد عرض فهمك الأولي للمشكلة عليهم؟">{{ (form_data.get('stakeholder_feedback_initial') if form_data else understanding.stakeholder_feedback_initial) if understanding else (form_data.get('stakeholder_feedback_initial', '') if form_data else '') }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="refined_problem_statement_early" class="form-label">صياغة المشكلة المنقحة (أولي):</label>
+                    <textarea class="form-control" id="refined_problem_statement_early" name="refined_problem_statement_early" rows="3" placeholder="اكتب هنا صياغة المشكلة بشكل أوضح بعد جمع المعلومات الأولية والتحقق منها. يجب أن تكون محددة وقابلة للقياس (إن أمكن).">{{ (form_data.get('refined_problem_statement_early') if form_data else understanding.refined_problem_statement_early) if understanding else (form_data.get('refined_problem_statement_early', '') if form_data else '') }}</textarea>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-info btn-lg text-white"><i class="fas fa-save"></i> حفظ تفاصيل الفهم</button>
+                </div>
+            </form>
+            <p class="text-center mt-3">
+                <a href="{{ url_for('problem_details', problem_id=problem.id) }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> العودة إلى تفاصيل المشكلة</a>
+            </p>
+        </div>
+    </div> <!-- نهاية .container -->
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+</html>

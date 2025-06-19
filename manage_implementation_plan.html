@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة خطة تنفيذ الحل لـ: {{ problem.title }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Tahoma', sans-serif; background-color: #f8f9fa; padding-top: 20px; padding-bottom: 20px; }
+        .main-container { max-width: 950px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+        .page-header { text-align: center; margin-bottom: 15px; color: #0dcaf0; }
+        .sub-header { text-align: center; color: #6c757d; margin-bottom: 25px; font-size: 1.1rem; }
+        .section-card { background-color: #fff; border: 1px solid #dee2e6; border-radius: .375rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 .125rem .25rem rgba(0,0,0,.075); }
+        .section-card-header { font-size: 1.5rem; color: #495057; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #eee; }
+        .task-item { border: 1px solid #e9ecef; background-color: #fdfdff; padding: 1rem; margin-bottom: 1rem; border-radius: .25rem; }
+        .task-item h6 { font-size: 1.1rem; margin-bottom: 0.5rem; color: #0d6efd; }
+        .task-item p { font-size: 0.9rem; margin-bottom: 0.25rem; }
+        .task-status-form select.form-select-sm { padding-top: .25rem; padding-bottom: .25rem; font-size: .875rem; width: auto; }
+        .task-actions .btn { margin-left: 0.3rem; } /* RTL */
+        .solution-info-box { background-color: #e9f5ff; border: 1px solid #b6d4fe; color: #0a58ca; padding: 1rem; margin-bottom: 1.5rem; border-radius: .375rem; }
+        .solution-info-box strong { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container main-container">
+        <h1 class="page-header"><i class="fas fa-tasks-alt"></i> إدارة خطة تنفيذ الحل</h1>
+        <div class="sub-header">
+            <p class="mb-1"><strong>للمشكلة:</strong> "{{ problem.title }}"</p>
+            <div class="solution-info-box">
+                <strong>الحل المختار:</strong> {{ chosen_solution.proposed_solution_details.solution_description if chosen_solution.proposed_solution_details else 'تفاصيل الحل غير متاحة' }}<br>
+                <small><i>(تاريخ الاختيار: {{ chosen_solution.date_chosen.strftime('%Y-%m-%d') }})</i></small>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'danger' else 'danger' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="section-card">
+            <h2 class="section-card-header"><i class="fas fa-clipboard-list"></i> تفاصيل خطة التنفيذ الرئيسية</h2>
+            <form method="POST" action="{{ url_for('manage_implementation_plan', chosen_solution_id=chosen_solution.id) }}">
+                <div class="mb-3">
+                    <label for="plan_description" class="form-label">وصف الخطة العام:</label>
+                    <textarea class="form-control" id="plan_description" name="plan_description" rows="3" placeholder="صف الأهداف الرئيسية لخطة التنفيذ...">{{ (form_data.get('plan_description') if form_data else plan.plan_description) if plan else (form_data.get('plan_description', '') if form_data else '') }}</textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="overall_status" class="form-label">الحالة العامة للخطة:</label>
+                        <select class="form-select" id="overall_status" name="overall_status">
+                            <option value="لم يبدأ" {% if ((form_data.get('overall_status') if form_data else plan.overall_status) if plan else (form_data.get('overall_status', 'لم يبدأ') if form_data else 'لم يبدأ')) == 'لم يبدأ' %}selected{% endif %}>لم يبدأ</option>
+                            <option value="قيد التنفيذ" {% if ((form_data.get('overall_status') if form_data else plan.overall_status) if plan else (form_data.get('overall_status', '') if form_data else '')) == 'قيد التنفيذ' %}selected{% endif %}>قيد التنفيذ</option>
+                            <option value="مكتمل" {% if ((form_data.get('overall_status') if form_data else plan.overall_status) if plan else (form_data.get('overall_status', '') if form_data else '')) == 'مكتمل' %}selected{% endif %}>مكتمل</option>
+                            <option value="متأخر" {% if ((form_data.get('overall_status') if form_data else plan.overall_status) if plan else (form_data.get('overall_status', '') if form_data else '')) == 'متأخر' %}selected{% endif %}>متأخر</option>
+                            <option value="معلق" {% if ((form_data.get('overall_status') if form_data else plan.overall_status) if plan else (form_data.get('overall_status', '') if form_data else '')) == 'معلق' %}selected{% endif %}>معلق</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="overall_budget" class="form-label">الميزانية الإجمالية (اختياري):</label>
+                        <input type="text" class="form-control" id="overall_budget" name="overall_budget" value="{{ (form_data.get('overall_budget') if form_data else plan.overall_budget) if plan else (form_data.get('overall_budget', '') if form_data else '') }}" placeholder="مثال: 10000 ريال">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="key_personnel" class="form-label">الأشخاص/الفرق الرئيسية المسؤولة:</label>
+                    <textarea class="form-control" id="key_personnel" name="key_personnel" rows="2" placeholder="من هم الأفراد أو الفرق الأساسية المشاركة؟">{{ (form_data.get('key_personnel') if form_data else plan.key_personnel) if plan else (form_data.get('key_personnel', '') if form_data else '') }}</textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="start_date_planned" class="form-label">تاريخ البدء المخطط له:</label>
+                        <input type="date" class="form-control" id="start_date_planned" name="start_date_planned" value="{{ (plan.start_date_planned.strftime('%Y-%m-%d') if plan and plan.start_date_planned else '') }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="end_date_planned" class="form-label">تاريخ الانتهاء المخطط له:</label>
+                        <input type="date" class="form-control" id="end_date_planned" name="end_date_planned" value="{{ (plan.end_date_planned.strftime('%Y-%m-%d') if plan and plan.end_date_planned else '') }}">
+                    </div>
+                </div>
+                 <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="start_date_actual" class="form-label">تاريخ البدء الفعلي:</label>
+                        <input type="date" class="form-control" id="start_date_actual" name="start_date_actual" value="{{ (plan.start_date_actual.strftime('%Y-%m-%d') if plan and plan.start_date_actual else '') }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="end_date_actual" class="form-label">تاريخ الانتهاء الفعلي:</label>
+                        <input type="date" class="form-control" id="end_date_actual" name="end_date_actual" value="{{ (plan.end_date_actual.strftime('%Y-%m-%d') if plan and plan.end_date_actual else '') }}">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ تفاصيل الخطة</button>
+            </form>
+        </div>
+
+        {% if plan %}
+        <div class="section-card">
+            <h2 class="section-card-header"><i class="fas fa-plus-square"></i> إضافة مهمة تنفيذ جديدة للخطة</h2>
+            <form method="POST" action="{{ url_for('add_implementation_task', plan_id=plan.id) }}">
+                <div class="mb-3">
+                    <label for="task_description_add" class="form-label">وصف المهمة:</label> <!-- تم تغيير id -->
+                    <textarea class="form-control" id="task_description_add" name="task_description" rows="2" placeholder="صف المهمة بشكل واضح ومحدد..." required></textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="assigned_to_add" class="form-label">مُسندة إلى:</label>
+                        <input type="text" class="form-control" id="assigned_to_add" name="assigned_to" placeholder="اسم الشخص أو الفريق المسؤول">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="priority_add" class="form-label">الأولوية:</label>
+                        <select class="form-select" id="priority_add" name="priority">
+                            <option value="منخفض">منخفض</option>
+                            <option value="متوسط" selected>متوسط</option>
+                            <option value="عالي">عالي</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="task_status_add_form" class="form-label">حالة المهمة:</label> <!-- تم تغيير id -->
+                         <select class="form-select" id="task_status_add_form" name="task_status">
+                            <option value="لم تبدأ" selected>لم تبدأ</option>
+                            <option value="قيد التنفيذ">قيد التنفيذ</option>
+                            <option value="مكتملة">مكتملة</option>
+                            <option value="متأخرة">متأخرة</option>
+                            <option value="معلقة">معلقة</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="due_date_add" class="form-label">تاريخ الاستحقاق (اختياري):</label>
+                        <input type="date" class="form-control" id="due_date_add" name="due_date">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="notes_add" class="form-label">ملاحظات إضافية:</label>
+                    <textarea class="form-control" id="notes_add" name="notes" rows="2" placeholder="أي تفاصيل أو ملاحظات أخرى متعلقة بالمهمة..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-success"><i class="fas fa-plus"></i> إضافة المهمة</button>
+            </form>
+        </div>
+
+        <div class="section-card">
+            <h2 class="section-card-header"><i class="fas fa-list-ul"></i> مهام التنفيذ الحالية ({{ tasks|length }})</h2>
+            {% if tasks %}
+                {% for task in tasks %}
+                    <div class="task-item">
+                        <div class="d-flex justify-content-between">
+                            <h6>{{ task.task_description }}</h6>
+                            <div class="task-actions">
+                                <!-- زر التعديل الجديد -->
+                                <a href="{{ url_for('edit_implementation_task', task_id=task.id) }}" class="btn btn-outline-warning btn-sm"><i class="fas fa-edit"></i></a>
+                                <form method="POST" action="{{ url_for('delete_implementation_task', task_id=task.id) }}" class="d-inline-block">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('هل أنت متأكد من حذف هذه المهمة؟');"><i class="fas fa-trash-alt"></i></button>
+                                </form>
+                            </div>
+                        </div>
+                        <p>
+                            <small class="text-muted">
+                                مُسندة إلى: <strong>{{ task.assigned_to or 'غير محدد' }}</strong> |
+                                الأولوية: <span class="badge
+                                    {% if task.priority == 'عالي' %} bg-danger
+                                    {% elif task.priority == 'متوسط' %} bg-warning text-dark
+                                    {% else %} bg-secondary {% endif %}">{{ task.priority }}</span>
+                            </small>
+                        </p>
+                        <p>
+                            <small class="text-muted">
+                                الحالة:
+                                <form method="POST" action="{{ url_for('update_task_status', task_id=task.id) }}" class="d-inline-block task-status-form">
+                                    <select name="task_status_update" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
+                                        <option value="لم تبدأ" {% if task.task_status == 'لم تبدأ' %}selected{% endif %}>لم تبدأ</option>
+                                        <option value="قيد التنفيذ" {% if task.task_status == 'قيد التنفيذ' %}selected{% endif %}>قيد التنفيذ</option>
+                                        <option value="مكتملة" {% if task.task_status == 'مكتملة' %}selected{% endif %}>مكتملة</option>
+                                        <option value="متأخرة" {% if task.task_status == 'متأخرة' %}selected{% endif %}>متأخرة</option>
+                                        <option value="معلقة" {% if task.task_status == 'معلقة' %}selected{% endif %}>معلقة</option>
+                                    </select>
+                                </form>
+                                | تاريخ الاستحقاق: <strong>{{ task.due_date.strftime('%Y-%m-%d') if task.due_date else 'غير محدد' }}</strong>
+                            </small>
+                        </p>
+                        {% if task.completion_date %}
+                            <p><small class="text-muted">تاريخ الإكمال: <strong>{{ task.completion_date.strftime('%Y-%m-%d %H:%M') }}</strong></small></p>
+                        {% endif %}
+                        {% if task.notes %}
+                            <p><small><i>ملاحظات: {{ task.notes }}</i></small></p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-light text-center" role="alert">
+                    <em>لم يتم إضافة أي مهام تنفيذ لهذه الخطة بعد.</em>
+                </div>
+            {% endif %}
+        </div>
+        {% else %}
+         <div class="alert alert-warning text-center" role="alert">
+             <i class="fas fa-exclamation-triangle"></i> يجب حفظ تفاصيل الخطة الرئيسية أولاً لتتمكن من إضافة مهام التنفيذ.
+         </div>
+        {% endif %}
+
+        <p class="text-center mt-4">
+            <a href="{{ url_for('problem_details', problem_id=problem.id) }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> العودة إلى تفاصيل المشكلة</a>
+        </p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+
+
+<!--<!DOCTYPE html>-->
+<!--<html lang="ar" dir="rtl">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--    <title>إدارة خطة تنفيذ الحل لـ: {{ problem.title }}</title>-->
+
+<!--    &lt;!&ndash; Bootstrap CSS via CDN &ndash;&gt;-->
+<!--    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">-->
+
+<!--    &lt;!&ndash; Font Awesome &ndash;&gt;-->
+<!--    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">-->
+
+<!--    <style>-->
+<!--        body {-->
+<!--            font-family: 'Tahoma', sans-serif;-->
+<!--            background-color: #f8f9fa;-->
+<!--            padding-top: 20px;-->
+<!--            padding-bottom: 20px;-->
+<!--        }-->
+<!--        .main-container { /* تغيير اسم الحاوية الرئيسية لتجنب التضارب */-->
+<!--            max-width: 950px;-->
+<!--            margin: auto;-->
+<!--            background: #fff;-->
+<!--            padding: 30px;-->
+<!--            border-radius: 8px;-->
+<!--            box-shadow: 0 0 15px rgba(0,0,0,0.1);-->
+<!--        }-->
+<!--        .page-header {-->
+<!--            text-align: center;-->
+<!--            margin-bottom: 15px;-->
+<!--            color: #0dcaf0; /* لون Bootstrap cyan لهذه الصفحة */-->
+<!--        }-->
+<!--        .sub-header { /* لعنوان المشكلة والحل المختار */-->
+<!--            text-align: center;-->
+<!--            color: #6c757d; /* رمادي Bootstrap */-->
+<!--            margin-bottom: 25px;-->
+<!--            font-size: 1.1rem;-->
+<!--        }-->
+<!--        .section-card { /* بطاقة لكل قسم رئيسي */-->
+<!--            background-color: #fff;-->
+<!--            border: 1px solid #dee2e6;-->
+<!--            border-radius: .375rem;-->
+<!--            padding: 1.5rem;-->
+<!--            margin-bottom: 1.5rem;-->
+<!--            box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);-->
+<!--        }-->
+<!--        .section-card-header {-->
+<!--            font-size: 1.5rem;-->
+<!--            color: #495057;-->
+<!--            margin-bottom: 1rem;-->
+<!--            padding-bottom: 0.5rem;-->
+<!--            border-bottom: 1px solid #eee;-->
+<!--        }-->
+<!--        .task-item {-->
+<!--            border: 1px solid #e9ecef;-->
+<!--            background-color: #fdfdff; /* خلفية أفتح قليلاً للمهام */-->
+<!--            padding: 1rem;-->
+<!--            margin-bottom: 1rem;-->
+<!--            border-radius: .25rem;-->
+<!--        }-->
+<!--        .task-item h6 { /* عنوان المهمة */-->
+<!--            font-size: 1.1rem;-->
+<!--            margin-bottom: 0.5rem;-->
+<!--            color: #0d6efd;-->
+<!--        }-->
+<!--        .task-item p {-->
+<!--            font-size: 0.9rem;-->
+<!--            margin-bottom: 0.25rem;-->
+<!--        }-->
+<!--        .task-status-form select.form-select-sm { /* تصغير حقل تحديث الحالة */-->
+<!--            padding-top: .25rem;-->
+<!--            padding-bottom: .25rem;-->
+<!--            font-size: .875rem;-->
+<!--        }-->
+<!--        .btn-sm-custom {-->
+<!--            padding: .25rem .5rem;-->
+<!--            font-size: .875rem;-->
+<!--        }-->
+<!--        .solution-info-box { /* صندوق لمعلومات الحل المختار */-->
+<!--            background-color: #e9f5ff; /* أزرق فاتح */-->
+<!--            border: 1px solid #b6d4fe;-->
+<!--            color: #0a58ca;-->
+<!--            padding: 1rem;-->
+<!--            margin-bottom: 1.5rem;-->
+<!--            border-radius: .375rem;-->
+<!--        }-->
+<!--        .solution-info-box strong {-->
+<!--            display: block;-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+<!--    &lt;!&ndash; يمكن إضافة شريط التنقل هنا أيضًا للاتساق &ndash;&gt;-->
+<!--    &lt;!&ndash; <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4"> ... </nav> &ndash;&gt;-->
+
+<!--    <div class="container main-container">-->
+<!--        <h1 class="page-header"><i class="fas fa-tasks-alt"></i> إدارة خطة تنفيذ الحل</h1>-->
+<!--        <div class="sub-header">-->
+<!--            <p class="mb-1"><strong>للمشكلة:</strong> "{{ problem.title }}"</p>-->
+<!--            <div class="solution-info-box">-->
+<!--                <strong>الحل المختار:</strong> {{ chosen_solution.proposed_solution_details.solution_description if chosen_solution.proposed_solution_details else 'تفاصيل الحل غير متاحة' }}<br>-->
+<!--                <small><i>(تاريخ الاختيار: {{ chosen_solution.date_chosen.strftime('%Y-%m-%d') }})</i></small>-->
+<!--            </div>-->
+<!--        </div>-->
+
+
+<!--        {% with messages = get_flashed_messages(with_categories=true) %}-->
+<!--            {% if messages %}-->
+<!--                {% for category, message in messages %}-->
+<!--                    <div class="alert alert-{{ category if category != 'danger' else 'danger' }} alert-dismissible fade show" role="alert">-->
+<!--                        {{ message }}-->
+<!--                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>-->
+<!--                    </div>-->
+<!--                {% endfor %}-->
+<!--            {% endif %}-->
+<!--        {% endwith %}-->
+
+<!--        <div class="section-card">-->
+<!--            <h2 class="section-card-header"><i class="fas fa-clipboard-list"></i> تفاصيل خطة التنفيذ الرئيسية</h2>-->
+<!--            <form method="POST" action="{{ url_for('manage_implementation_plan', chosen_solution_id=chosen_solution.id) }}">-->
+<!--                <div class="mb-3">-->
+<!--                    <label for="plan_description" class="form-label">وصف الخطة العام:</label>-->
+<!--                    <textarea class="form-control" id="plan_description" name="plan_description" rows="3" placeholder="صف الأهداف الرئيسية لخطة التنفيذ، المنهجية المتبعة، وأي معلومات عامة هامة...">{{ (form_data.get('plan_description') if form_data else plan.plan_description) if plan else (form_data.get('plan_description', '') if form_data else '') }}</textarea>-->
+<!--                </div>-->
+<!--                <div class="row">-->
+<!--                    <div class="col-md-6 mb-3">-->
+<!--                        <label for="overall_status" class="form-label">الحالة العامة للخطة:</label>-->
+<!--                        <select class="form-select" id="overall_status" name="overall_status">-->
+<!--                            <option value="لم يبدأ" {% if ((form_data.get('overall_status') if form_data else plan.overall_status) if plan else (form_data.get('overall_status', 'لم يبدأ') if form_data else 'لم يبدأ')) == 'لم يبدأ' %}selected{% endif %}>لم يبدأ</option>-->
+<!--                            <option value="قيد التنفيذ" {% if ((form_data.get('overall_status') if form_data else plan.overall_status) if plan else (form_data.get('overall_status', '') if form_data else '')) == 'قيد التنفيذ' %}selected{% endif %}>قيد التنفيذ</option>-->
+<!--                            <option value="مكتمل" {% if ((form_data.get('overall_status') if form_data else plan.overall_status) if plan else (form_data.get('overall_status', '') if form_data else '')) == 'مكتمل' %}selected{% endif %}>مكتمل</option>-->
+<!--                            <option value="متأخر" {% if ((form_data.get('overall_status') if form_data else plan.overall_status) if plan else (form_data.get('overall_status', '') if form_data else '')) == 'متأخر' %}selected{% endif %}>متأخر</option>-->
+<!--                            <option value="معلق" {% if ((form_data.get('overall_status') if form_data else plan.overall_status) if plan else (form_data.get('overall_status', '') if form_data else '')) == 'معلق' %}selected{% endif %}>معلق</option>-->
+<!--                        </select>-->
+<!--                    </div>-->
+<!--                    <div class="col-md-6 mb-3">-->
+<!--                        <label for="overall_budget" class="form-label">الميزانية الإجمالية (اختياري):</label>-->
+<!--                        <input type="text" class="form-control" id="overall_budget" name="overall_budget" value="{{ (form_data.get('overall_budget') if form_data else plan.overall_budget) if plan else (form_data.get('overall_budget', '') if form_data else '') }}" placeholder="مثال: 10000 ريال، أو وصف للموارد">-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--                <div class="mb-3">-->
+<!--                    <label for="key_personnel" class="form-label">الأشخاص/الفرق الرئيسية المسؤولة:</label>-->
+<!--                    <textarea class="form-control" id="key_personnel" name="key_personnel" rows="2" placeholder="من هم الأفراد أو الفرق الأساسية المشاركة في تنفيذ هذه الخطة؟">{{ (form_data.get('key_personnel') if form_data else plan.key_personnel) if plan else (form_data.get('key_personnel', '') if form_data else '') }}</textarea>-->
+<!--                </div>-->
+<!--                <div class="row">-->
+<!--                    <div class="col-md-6 mb-3">-->
+<!--                        <label for="start_date_planned" class="form-label">تاريخ البدء المخطط له:</label>-->
+<!--                        <input type="date" class="form-control" id="start_date_planned" name="start_date_planned" value="{{ (plan.start_date_planned.strftime('%Y-%m-%d') if plan and plan.start_date_planned else '') }}">-->
+<!--                    </div>-->
+<!--                    <div class="col-md-6 mb-3">-->
+<!--                        <label for="end_date_planned" class="form-label">تاريخ الانتهاء المخطط له:</label>-->
+<!--                        <input type="date" class="form-control" id="end_date_planned" name="end_date_planned" value="{{ (plan.end_date_planned.strftime('%Y-%m-%d') if plan and plan.end_date_planned else '') }}">-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--                 <div class="row">-->
+<!--                    <div class="col-md-6 mb-3">-->
+<!--                        <label for="start_date_actual" class="form-label">تاريخ البدء الفعلي:</label>-->
+<!--                        <input type="date" class="form-control" id="start_date_actual" name="start_date_actual" value="{{ (plan.start_date_actual.strftime('%Y-%m-%d') if plan and plan.start_date_actual else '') }}">-->
+<!--                    </div>-->
+<!--                    <div class="col-md-6 mb-3">-->
+<!--                        <label for="end_date_actual" class="form-label">تاريخ الانتهاء الفعلي:</label>-->
+<!--                        <input type="date" class="form-control" id="end_date_actual" name="end_date_actual" value="{{ (plan.end_date_actual.strftime('%Y-%m-%d') if plan and plan.end_date_actual else '') }}">-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ تفاصيل الخطة</button>-->
+<!--            </form>-->
+<!--        </div>-->
+
+<!--        {% if plan %}-->
+<!--        <div class="section-card">-->
+<!--            <h2 class="section-card-header"><i class="fas fa-plus-square"></i> إضافة مهمة تنفيذ جديدة للخطة</h2>-->
+<!--            <form method="POST" action="{{ url_for('add_implementation_task', plan_id=plan.id) }}">-->
+<!--                <div class="mb-3">-->
+<!--                    <label for="task_description" class="form-label">وصف المهمة:</label>-->
+<!--                    <textarea class="form-control" id="task_description" name="task_description" rows="2" placeholder="صف المهمة بشكل واضح ومحدد..." required></textarea>-->
+<!--                </div>-->
+<!--                <div class="row">-->
+<!--                    <div class="col-md-6 mb-3">-->
+<!--                        <label for="assigned_to" class="form-label">مُسندة إلى:</label>-->
+<!--                        <input type="text" class="form-control" id="assigned_to" name="assigned_to" placeholder="اسم الشخص أو الفريق المسؤول">-->
+<!--                    </div>-->
+<!--                    <div class="col-md-6 mb-3">-->
+<!--                        <label for="priority" class="form-label">الأولوية:</label>-->
+<!--                        <select class="form-select" id="priority" name="priority">-->
+<!--                            <option value="منخفض">منخفض</option>-->
+<!--                            <option value="متوسط" selected>متوسط</option>-->
+<!--                            <option value="عالي">عالي</option>-->
+<!--                        </select>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--                <div class="row">-->
+<!--                    <div class="col-md-6 mb-3">-->
+<!--                        <label for="task_status_add" class="form-label">حالة المهمة:</label>-->
+<!--                         <select class="form-select" id="task_status_add" name="task_status">-->
+<!--                            <option value="لم تبدأ" selected>لم تبدأ</option>-->
+<!--                            <option value="قيد التنفيذ">قيد التنفيذ</option>-->
+<!--                            <option value="مكتملة">مكتملة</option>-->
+<!--                            <option value="متأخرة">متأخرة</option>-->
+<!--                            <option value="معلقة">معلقة</option>-->
+<!--                        </select>-->
+<!--                    </div>-->
+<!--                    <div class="col-md-6 mb-3">-->
+<!--                        <label for="due_date" class="form-label">تاريخ الاستحقاق (اختياري):</label>-->
+<!--                        <input type="date" class="form-control" id="due_date" name="due_date">-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--                <div class="mb-3">-->
+<!--                    <label for="notes" class="form-label">ملاحظات إضافية:</label>-->
+<!--                    <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="أي تفاصيل أو ملاحظات أخرى متعلقة بالمهمة..."></textarea>-->
+<!--                </div>-->
+<!--                <button type="submit" class="btn btn-success"><i class="fas fa-plus"></i> إضافة المهمة</button>-->
+<!--            </form>-->
+<!--        </div>-->
+
+<!--        <div class="section-card">-->
+<!--            <h2 class="section-card-header"><i class="fas fa-list-ul"></i> مهام التنفيذ الحالية ({{ tasks|length }})</h2>-->
+<!--            {% if tasks %}-->
+<!--                {% for task in tasks %}-->
+<!--                    <div class="task-item">-->
+<!--                        <h6>{{ task.task_description }}</h6>-->
+<!--                        <p>-->
+<!--                            <small class="text-muted">-->
+<!--                                مُسندة إلى: <strong>{{ task.assigned_to or 'غير محدد' }}</strong> |-->
+<!--                                الأولوية: <span class="badge-->
+<!--                                    {% if task.priority == 'عالي' %} bg-danger-->
+<!--                                    {% elif task.priority == 'متوسط' %} bg-warning text-dark-->
+<!--                                    {% else %} bg-secondary {% endif %}">{{ task.priority }}</span>-->
+<!--                            </small>-->
+<!--                        </p>-->
+<!--                        <p>-->
+<!--                            <small class="text-muted">-->
+<!--                                الحالة:-->
+<!--                                <form method="POST" action="{{ url_for('update_task_status', task_id=task.id) }}" class="d-inline-block task-status-form">-->
+<!--                                    <select name="task_status_update" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">-->
+<!--                                        <option value="لم تبدأ" {% if task.task_status == 'لم تبدأ' %}selected{% endif %}>لم تبدأ</option>-->
+<!--                                        <option value="قيد التنفيذ" {% if task.task_status == 'قيد التنفيذ' %}selected{% endif %}>قيد التنفيذ</option>-->
+<!--                                        <option value="مكتملة" {% if task.task_status == 'مكتملة' %}selected{% endif %}>مكتملة</option>-->
+<!--                                        <option value="متأخرة" {% if task.task_status == 'متأخرة' %}selected{% endif %}>متأخرة</option>-->
+<!--                                        <option value="معلقة" {% if task.task_status == 'معلقة' %}selected{% endif %}>معلقة</option>-->
+<!--                                    </select>-->
+<!--                                </form>-->
+<!--                                | تاريخ الاستحقاق: <strong>{{ task.due_date.strftime('%Y-%m-%d') if task.due_date else 'غير محدد' }}</strong>-->
+<!--                            </small>-->
+<!--                        </p>-->
+<!--                        {% if task.completion_date %}-->
+<!--                            <p><small class="text-muted">تاريخ الإكمال: <strong>{{ task.completion_date.strftime('%Y-%m-%d %H:%M') }}</strong></small></p>-->
+<!--                        {% endif %}-->
+<!--                        {% if task.notes %}-->
+<!--                            <p><small><i>ملاحظات: {{ task.notes }}</i></small></p>-->
+<!--                        {% endif %}-->
+<!--                        <form method="POST" action="{{ url_for('delete_implementation_task', task_id=task.id) }}" class="d-inline-block mt-2">-->
+<!--                            <button type="submit" class="btn btn-danger btn-sm-custom" onclick="return confirm('هل أنت متأكد من حذف هذه المهمة؟');"><i class="fas fa-trash-alt"></i> حذف المهمة</button>-->
+<!--                        </form>-->
+<!--                    </div>-->
+<!--                {% endfor %}-->
+<!--            {% else %}-->
+<!--                <div class="alert alert-light text-center" role="alert">-->
+<!--                    <em>لم يتم إضافة أي مهام تنفيذ لهذه الخطة بعد.</em>-->
+<!--                </div>-->
+<!--            {% endif %}-->
+<!--        </div>-->
+<!--        {% else %}-->
+<!--         <div class="alert alert-warning text-center" role="alert">-->
+<!--             <i class="fas fa-exclamation-triangle"></i> يجب حفظ تفاصيل الخطة الرئيسية أولاً لتتمكن من إضافة مهام التنفيذ.-->
+<!--         </div>-->
+<!--        {% endif %}-->
+
+<!--        <p class="text-center mt-4">-->
+<!--            <a href="{{ url_for('problem_details', problem_id=problem.id) }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> العودة إلى تفاصيل المشكلة</a>-->
+<!--        </p>-->
+<!--    </div> &lt;!&ndash; نهاية .main-container &ndash;&gt;-->
+
+<!--    &lt;!&ndash; Bootstrap Bundle with Popper &ndash;&gt;-->
+<!--    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>-->
+<!--</body>-->
+<!--</html>-->

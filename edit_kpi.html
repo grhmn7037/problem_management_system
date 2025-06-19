@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تعديل مؤشر أداء - {{ problem.title }}</title>
+
+    <!-- Bootstrap CSS via CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Tahoma', sans-serif;
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+        .form-container {
+            max-width: 750px;
+            margin: auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        .form-header {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #198754; /* نفس لون صفحة إدارة KPIs (success) */
+        }
+        .context-info {
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h1 class="form-header"><i class="fas fa-edit"></i> تعديل مؤشر أداء (KPI)</h1>
+            <div class="context-info">
+                <p class="mb-1"><strong>المشكلة:</strong> {{ problem.title }}</p>
+                <p class="mb-0"><strong>الحل المختار:</strong> {{ chosen_solution.proposed_solution_details.solution_description if chosen_solution.proposed_solution_details else 'N/A' }}</p>
+            </div>
+            <p class="text-center text-muted mb-3">المؤشر الحالي: "{{ kpi.kpi_name }}"</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category if category != 'danger' else 'danger' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('edit_kpi', kpi_id=kpi.id) }}">
+                <div class="mb-3">
+                    <label for="kpi_name" class="form-label">اسم مؤشر الأداء:</label>
+                    <input type="text" class="form-control" id="kpi_name" name="kpi_name" value="{{ request.form.get('kpi_name', kpi.kpi_name) }}" placeholder="مثال: معدل رضا العملاء" required>
+                </div>
+                <div class="mb-3">
+                    <label for="kpi_description" class="form-label">وصف المؤشر وكيفية قياسه:</label>
+                    <textarea class="form-control" id="kpi_description" name="kpi_description" rows="2" placeholder="اشرح ما يقيسه هذا المؤشر وكيف سيتم جمع البيانات الخاصة به.">{{ request.form.get('kpi_description', kpi.kpi_description or '') }}</textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="target_value" class="form-label">القيمة المستهدفة:</label>
+                        <input type="text" class="form-control" id="target_value" name="target_value" value="{{ request.form.get('target_value', kpi.target_value or '') }}" placeholder="مثال: 90%، أقل من 3 أيام">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="current_value_baseline" class="form-label">القيمة الحالية (خط الأساس):</label>
+                        <input type="text" class="form-control" id="current_value_baseline" name="current_value_baseline" value="{{ request.form.get('current_value_baseline', kpi.current_value_baseline or '') }}" placeholder="قيمة المؤشر قبل تطبيق الحل">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="measurement_unit" class="form-label">وحدة القياس:</label>
+                        <input type="text" class="form-control" id="measurement_unit" name="measurement_unit" value="{{ request.form.get('measurement_unit', kpi.measurement_unit or '') }}" placeholder="مثال: %، يوم، عدد، ريال">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="measurement_frequency" class="form-label">وتيرة القياس:</label>
+                        <input type="text" class="form-control" id="measurement_frequency" name="measurement_frequency" value="{{ request.form.get('measurement_frequency', kpi.measurement_frequency or '') }}" placeholder="مثال: يومي، أسبوعي، شهري">
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> حفظ تعديلات المؤشر</button>
+                </div>
+            </form>
+
+            <p class="text-center mt-3">
+                <a href="{{ url_for('manage_kpis', chosen_solution_id=chosen_solution.id) }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> العودة إلى إدارة مؤشرات الأداء</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+</html>

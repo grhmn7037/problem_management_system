@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إضافة مشكلة جديدة</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Tahoma', sans-serif;
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+        .form-container {
+            max-width: 700px;
+            margin: auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        .form-header {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #0d6efd;
+        }
+        .suggested-tags-list {
+            list-style-type: none;
+            padding-left: 0;
+            margin-top: 5px;
+        }
+        .suggested-tags-list li {
+            display: inline-block;
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 0.2rem 0.5rem;
+            margin: 2px;
+            border-radius: 0.25rem;
+            font-size: 0.85em;
+            cursor: pointer;
+        }
+        .suggested-tags-list li:hover {
+            background-color: #ced4da;
+        }
+        #suggestedKeywordsAreaAdd .loading-indicator {
+            font-style: italic;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand" style="font-weight: bold; font-size: 1.5rem;" href="{{ url_for('index') }}">
+                <i class="fas fa-project-diagram"></i> نظام إدارة المشكلات
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'index' else '' }}" href="{{ url_for('index') }}">الرئيسية</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-light btn-sm text-primary {{ 'active' if request.endpoint == 'add_problem' else '' }}" href="{{ url_for('add_problem') }}">
+                            <i class="fas fa-plus-circle"></i> إضافة مشكلة جديدة
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="form-container">
+            <h1 class="form-header"><i class="fas fa-plus-circle"></i> إضافة مشكلة جديدة</h1>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category if category != 'danger' else 'danger' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('add_problem') }}">
+                <div class="mb-3">
+                    <label for="title" class="form-label">عنوان المشكلة:<span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="title" name="title" value="{{ form_data.get('title', '') }}" placeholder="عنوان وصفي قصير للمشكلة" required>
+                </div>
+                <div class="mb-3">
+                    <label for="description_initial_add" class="form-label">الوصف الأولي للمشكلة:</label>
+                    <textarea class="form-control" id="description_initial_add" name="description_initial" rows="4" placeholder="صف المشكلة كما تم فهمها في البداية. كلما كان الوصف أدق، كانت اقتراحات الكلمات المفتاحية أفضل.">{{ form_data.get('description_initial', '') }}</textarea>
+                    <div id="suggestedKeywordsAreaAdd" class="mt-2">
+                        {# هذا القسم سيتم ملؤه بواسطة JavaScript #}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="problem_tags_add" class="form-label">الكلمات المفتاحية (Tags):</label>
+                    <input type="text" class="form-control" id="problem_tags_add" name="problem_tags"
+                           value="{{ (form_data.get('problem_tags', '') or (form_data.get('suggested_tags_on_error') | join(', ') if form_data.get('suggested_tags_on_error') else '')) }}"
+                           placeholder="أدخل كلمات مفتاحية مفصولة بفواصل (مثال: تقنية, سيرفر, بطء)">
+                    <div class="form-text">هذه الكلمات تساعد في تصنيف المشكلة والبحث عنها لاحقًا. سيتم اقتراح بعض الكلمات بناءً على الوصف إذا ترك هذا الحقل فارغًا أو بناءً على تفاعلك مع الاقتراحات.</div>
+
+                    {% if form_data and form_data.get('suggested_tags_on_error') %}
+                        <div class="mt-2" id="serverSuggestedTagsAreaAdd">
+                            <small>كلمات مفتاحية مقترحة بناءً على الوصف الأخير (انقر للإضافة):</small>
+                            <ul class="suggested-tags-list">
+                                {% for tag in form_data.get('suggested_tags_on_error') %}
+                                    <li>{{ tag }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="domain" class="form-label">مجال المشكلة:</label>
+                        <input type="text" class="form-control" id="domain" name="domain" value="{{ form_data.get('domain', '') }}" placeholder="مثال: عمل، شخصي، تقني">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="complexity_level" class="form-label">مستوى التعقيد:</label>
+                        <select class="form-select" id="complexity_level" name="complexity_level">
+                            <option value="" {% if not form_data.get('complexity_level', '') %}selected{% endif %}>-- اختر --</option>
+                            <option value="بسيط" {% if form_data.get('complexity_level', '') == 'بسيط' %}selected{% endif %}>بسيط</option>
+                            <option value="متوسط" {% if form_data.get('complexity_level', '') == 'متوسط' %}selected{% endif %}>متوسط</option>
+                            <option value="معقد" {% if form_data.get('complexity_level', '') == 'معقد' %}selected{% endif %}>معقد</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="status" class="form-label">الحالة:</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="مفتوحة" {% if form_data.get('status', 'مفتوحة') == 'مفتوحة' %}selected{% endif %}>مفتوحة</option>
+                        <option value="قيد التحليل" {% if form_data.get('status', '') == 'قيد التحليل' %}selected{% endif %}>قيد التحليل</option>
+                        <option value="تم تحديد الحلول" {% if form_data.get('status', '') == 'تم تحديد الحلول' %}selected{% endif %}>تم تحديد الحلول</option>
+                        <option value="قيد التنفيذ" {% if form_data.get('status', '') == 'قيد التنفيذ' %}selected{% endif %}>قيد التنفيذ</option>
+                        <option value="مغلقة" {% if form_data.get('status', '') == 'مغلقة' %}selected{% endif %}>مغلقة</option>
+                        <option value="معلقة" {% if form_data.get('status', '') == 'معلقة' %}selected{% endif %}>معلقة</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="stakeholders_involved" class="form-label">الأطراف المعنية:</label>
+                    <textarea class="form-control" id="stakeholders_involved" name="stakeholders_involved" rows="2" placeholder="من هم الأشخاص أو الإدارات أو الجهات المتأثرة أو المعنية بالمشكلة؟">{{ form_data.get('stakeholders_involved', '') }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="initial_impact_assessment" class="form-label">تقييم التأثير الأولي:</label>
+                    <textarea class="form-control" id="initial_impact_assessment" name="initial_impact_assessment" rows="2" placeholder="ما هو التأثير الأولي المتوقع للمشكلة (مالي، تشغيلي، سمعة، إلخ)؟">{{ form_data.get('initial_impact_assessment', '') }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="problem_source" class="form-label">مصدر المشكلة:</label>
+                    <input type="text" class="form-control" id="problem_source" name="problem_source" value="{{ form_data.get('problem_source', '') }}" placeholder="كيف تم اكتشاف أو الإبلاغ عن المشكلة؟ (تقرير، شكوى، ملاحظة)">
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save"></i> حفظ المشكلة</button>
+                </div>
+            </form>
+            <p class="text-center mt-3">
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> العودة إلى القائمة الرئيسية</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+    <script src="{{ url_for('static', filename='js/keyword_suggester.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof initializeKeywordSuggester === 'function') {
+                initializeKeywordSuggester(
+                    'description_initial_add',
+                    'suggestedKeywordsAreaAdd',
+                    'problem_tags_add',
+                    "{{ url_for('suggest_keywords_api') }}"
+                );
+            } else {
+                console.error("initializeKeywordSuggester function is not defined. Check if keyword_suggester.js is loaded correctly.");
+            }
+
+            const serverSuggestedListElement = document.getElementById('serverSuggestedTagsAreaAdd');
+            if (serverSuggestedListElement) {
+                const listItems = serverSuggestedListElement.querySelectorAll('.suggested-tags-list li');
+                listItems.forEach(li => {
+                    const tagText = li.textContent;
+                    if (typeof window.addTagToInput === 'function') {
+                        li.addEventListener('click', function() {
+                            window.addTagToInput(tagText, 'problem_tags_add');
+                        });
+                    } else {
+                        console.warn("addTagToInput function is not globally available in add_problem.html for server-suggested tags.");
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

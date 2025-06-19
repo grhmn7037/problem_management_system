@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة المشكلات</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Tahoma', sans-serif;
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 80px; /* مساحة لزر الشات بوت العائم */
+        }
+        .container {
+            max-width: 960px;
+        }
+        .navbar-brand-custom {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        .sentiment-badge {
+            padding: 0.25em 0.5em;
+            font-size: 0.70em;
+            font-weight: bold;
+            border-radius: 0.25rem;
+            vertical-align: middle;
+            margin-inline-start: 0.3rem;
+        }
+        .sentiment-positive { background-color: #d1e7dd; color: #0f5132; }
+        .sentiment-negative { background-color: #f8d7da; color: #842029; }
+        .sentiment-neutral { background-color: #e2e3e5; color: #41464b; }
+
+        .index-tag-badge {
+            font-size: 0.65em;
+            padding: 0.2em 0.4em;
+            margin-inline-start: 0.2rem;
+            margin-bottom: 0.2rem;
+            border: 1px solid #ced4da;
+        }
+        .btn-delete-problem { /* لا توجد أنماط خاصة حاليًا */ }
+
+        /* === بداية: أنماط الـ Chatbot === */
+        #chatbot-toggle-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px; /* لـ RTL سيكون في اليسار */
+            z-index: 1050; /* ليكون فوق معظم العناصر */
+            font-size: 1.5rem; /* حجم الأيقونة */
+            padding: 0.75rem 1rem;
+        }
+        #chatbot-window {
+            position: fixed;
+            bottom: 80px; /* فوق الزر */
+            right: 20px;  /* لـ RTL سيكون في اليسار */
+            width: 350px;
+            max-width: 90%;
+            height: 450px;
+            max-height: 70vh;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: none; /* مخفي بشكل افتراضي */
+            flex-direction: column;
+            z-index: 1040;
+        }
+        #chatbot-window.open {
+            display: flex;
+        }
+        .chatbot-header {
+            background-color: #0d6efd;
+            color: white;
+            padding: 10px 15px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chatbot-header h5 {
+            margin-bottom: 0;
+            font-size: 1.1rem;
+        }
+        #chatbot-close-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+        }
+        .chatbot-messages {
+            flex-grow: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+        }
+        .chatbot-message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .chatbot-message.user {
+            background-color: #0d6efd;
+            color: white;
+            margin-right: auto; /* لـ RTL سيكون على اليسار */
+            border-bottom-left-radius: 0; /* لـ RTL سيكون border-bottom-right-radius */
+        }
+        .chatbot-message.bot {
+            background-color: #e9ecef;
+            color: #333;
+            margin-left: auto; /* لـ RTL سيكون على اليمين */
+            border-bottom-right-radius: 0; /* لـ RTL سيكون border-bottom-left-radius */
+        }
+         /* تعديل لمراعاة اتجاه RTL في الرسائل */
+        html[dir="rtl"] .chatbot-message.user {
+            margin-left: auto;
+            margin-right: 0;
+            border-bottom-right-radius: 0;
+            border-bottom-left-radius: 15px; /* إعادة الشكل الطبيعي */
+        }
+        html[dir="rtl"] .chatbot-message.bot {
+            margin-right: auto;
+            margin-left: 0;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 15px; /* إعادة الشكل الطبيعي */
+        }
+        .chatbot-input-area {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+        }
+        .chatbot-input-area input {
+            flex-grow: 1;
+            border-radius: 20px;
+            border: 1px solid #ccc;
+            padding: 8px 12px;
+        }
+        .chatbot-input-area button {
+            margin-left: 8px; /* لـ RTL سيكون margin-right */
+            border-radius: 50%;
+        }
+         html[dir="rtl"] .chatbot-input-area button {
+            margin-right: 8px;
+            margin-left: 0;
+        }
+        /* === نهاية: أنماط الـ Chatbot === */
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom" href="{{ url_for('index') }}">
+                <i class="fas fa-project-diagram"></i> نظام إدارة المشكلات
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="{{ url_for('index') }}">الرئيسية</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-light btn-sm text-primary"
+                           href="{{ url_for('add_problem') }}"
+                           style="display: block !important; visibility: visible !important;">
+                            <i class="fas fa-plus-circle"></i> إضافة مشكلة جديدة
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'danger' else 'danger' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1><i class="fas fa-list-ul"></i> قائمة المشكلات</h1>
+        </div>
+
+        {% if problems %}
+            <div class="list-group">
+                {% for problem in problems %}
+                <div class="list-group-item list-group-item-action flex-column align-items-start mb-2 shadow-sm problem-card border-start border-5
+                            {% if problem.status == 'مفتوحة' %} border-primary
+                            {% elif problem.status == 'قيد التحليل' %} border-info
+                            {% elif problem.status == 'قيد التنفيذ' %} border-warning
+                            {% elif problem.status == 'مغلقة' %} border-success
+                            {% else %} border-secondary {% endif %}">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">
+                            {{ problem.title }}
+                            {% if problem.description_initial and problem.sentiment_label %}
+                                <span class="sentiment-badge
+                                    {% if problem.sentiment_label == 'إيجابي' %}sentiment-positive
+                                    {% elif problem.sentiment_label == 'سلبي' %}sentiment-negative
+                                    {% else %}sentiment-neutral{% endif %}"
+                                    title="مشاعر الوصف: {{ problem.sentiment_label }} (الدرجة: {{ '%.2f'|format(problem.sentiment_score) if problem.sentiment_score is not none else 'N/A' }})">
+                                    {% if problem.sentiment_label == 'إيجابي' %}<i class="fas fa-smile"></i>
+                                    {% elif problem.sentiment_label == 'سلبي' %}<i class="fas fa-frown"></i>
+                                    {% else %}<i class="fas fa-meh"></i>{% endif %}
+                                </span>
+                            {% endif %}
+                        </h5>
+                        <small class="text-muted">{{ problem.date_identified.strftime('%Y-%m-%d') }}</small>
+                    </div>
+                    <p class="mb-1">
+                        <span class="badge
+                            {% if problem.status == 'مفتوحة' %} bg-primary
+                            {% elif problem.status == 'قيد التحليل' %} bg-info text-dark
+                            {% elif problem.status == 'قيد التنفيذ' %} bg-warning text-dark
+                            {% elif problem.status == 'مغلقة' %} bg-success
+                            {% else %} bg-secondary {% endif %}">
+                            {{ problem.status }}
+                        </span>
+                        <span class="badge bg-light text-dark border me-1">{{ problem.domain or 'غير محدد' }}</span>
+                        <span class="badge bg-light text-dark border me-1">{{ problem.complexity_level or 'غير محدد' }}</span>
+
+                        {% if problem.problem_tags and problem.problem_tags.strip() %}
+                            {% set tags_list = problem.problem_tags.split(',') %}
+                            {% for tag in tags_list[:2] %}
+                                {% if tag.strip() %}
+                                    <span class="badge bg-light text-dark index-tag-badge">{{ tag.strip() }}</span>
+                                {% endif %}
+                            {% endfor %}
+                            {% if tags_list|length > 2 %}
+                                <span class="badge bg-light text-dark index-tag-badge">...</span>
+                            {% endif %}
+                        {% endif %}
+                    </p>
+                    <small class="text-muted">
+                        {% if problem.description_initial %}
+                            {{ problem.description_initial[:120] | nl2br }}...
+                        {% else %}
+                            لا يوجد وصف أولي.
+                        {% endif %}
+                    </small>
+                    <div class="mt-2">
+                        <a href="{{ url_for('problem_details', problem_id=problem.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye"></i> عرض التفاصيل
+                        </a>
+                        <a href="{{ url_for('edit_problem', problem_id=problem.id) }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-edit"></i> تعديل
+                        </a>
+                        <form method="POST" action="{{ url_for('delete_problem', problem_id=problem.id) }}" style="display: inline-block;" onsubmit="return confirm('هل أنت متأكد أنك تريد حذف هذه المشكلة بشكل نهائي؟ هذا الإجراء لا يمكن التراجع عنه.');">
+                            <button type="submit" class="btn btn-outline-danger btn-sm btn-delete-problem">
+                                <i class="fas fa-trash-alt"></i> حذف
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info text-center" role="alert">
+                <i class="fas fa-info-circle"></i> لا توجد مشاكل مدرجة حاليًا. قم بإضافة مشكلة جديدة!
+            </div>
+        {% endif %}
+    </div>
+
+    {# === بداية: HTML الخاص بالـ Chatbot === #}
+    <button id="chatbot-toggle-button" class="btn btn-primary rounded-circle shadow">
+        <i class="fas fa-comment-dots"></i>
+    </button>
+
+    <div id="chatbot-window" class="shadow-lg">
+        <div class="chatbot-header">
+            <h5><i class="fas fa-robot"></i> مساعدك الذكي</h5>
+            <button id="chatbot-close-button" type="button">×</button>
+        </div>
+        <div class="chatbot-messages" id="chatbot-messages-area">
+            <div class="chatbot-message bot">أهلاً بك! كيف يمكنني مساعدتك اليوم؟ اكتب 'مساعدة' لعرض قائمة بالخيارات.</div>
+        </div>
+        <div class="chatbot-input-area">
+            <input type="text" id="chatbot-user-input" class="form-control" placeholder="اكتب سؤالك هنا...">
+            <button id="chatbot-send-button" class="btn btn-primary">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+    {# === نهاية: HTML الخاص بالـ Chatbot === #}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+    {# === بداية: JavaScript الخاص بالـ Chatbot === #}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const chatbotToggleButton = document.getElementById('chatbot-toggle-button');
+            const chatbotWindow = document.getElementById('chatbot-window');
+            const chatbotCloseButton = document.getElementById('chatbot-close-button');
+            const chatbotMessagesArea = document.getElementById('chatbot-messages-area');
+            const chatbotUserInput = document.getElementById('chatbot-user-input');
+            const chatbotSendButton = document.getElementById('chatbot-send-button');
+
+            chatbotToggleButton.addEventListener('click', function () {
+                chatbotWindow.classList.toggle('open');
+                if (chatbotWindow.classList.contains('open')) {
+                    chatbotUserInput.focus();
+                }
+            });
+
+            chatbotCloseButton.addEventListener('click', function () {
+                chatbotWindow.classList.remove('open');
+            });
+
+            function appendMessage(text, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('chatbot-message', sender);
+                // استخدام textContent لمنع XSS إذا كان الرد قد يحتوي على HTML
+                const p = document.createElement('p');
+                p.style.whiteSpace = "pre-wrap"; // للحفاظ على فواصل الأسطر في الرد
+                p.textContent = text;
+                messageDiv.appendChild(p);
+                chatbotMessagesArea.appendChild(messageDiv);
+                chatbotMessagesArea.scrollTop = chatbotMessagesArea.scrollHeight; // التمرير للأسفل
+            }
+
+            async function sendMessageToBot() {
+                const userMessage = chatbotUserInput.value.trim();
+                if (userMessage === "") return;
+
+                appendMessage(userMessage, 'user');
+                chatbotUserInput.value = ""; // مسح حقل الإدخال
+
+                // عرض مؤشر تحميل مؤقت (اختياري)
+                const loadingMessageDiv = document.createElement('div');
+                loadingMessageDiv.classList.add('chatbot-message', 'bot');
+                loadingMessageDiv.innerHTML = '<small class="loading-indicator"><i>يفكر المساعد...</i></small>';
+                chatbotMessagesArea.appendChild(loadingMessageDiv);
+                chatbotMessagesArea.scrollTop = chatbotMessagesArea.scrollHeight;
+
+                try {
+                    const response = await fetch("{{ url_for('chatbot_api') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ message: userMessage })
+                    });
+
+                    chatbotMessagesArea.removeChild(loadingMessageDiv); // إزالة رسالة التحميل
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        appendMessage(data.reply, 'bot');
+                    } else {
+                        console.error('Chatbot API error:', response.status, await response.text());
+                        appendMessage("عذرًا، حدث خطأ أثناء معالجة طلبك.", 'bot');
+                    }
+                } catch (error) {
+                    chatbotMessagesArea.removeChild(loadingMessageDiv); // إزالة رسالة التحميل
+                    console.error('Chatbot fetch error:', error);
+                    appendMessage("عذرًا، لا يمكن الاتصال بخادم المساعدة الآن.", 'bot');
+                }
+            }
+
+            chatbotSendButton.addEventListener('click', sendMessageToBot);
+            chatbotUserInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    sendMessageToBot();
+                }
+            });
+        });
+    </script>
+    {# === نهاية: JavaScript الخاص بالـ Chatbot === #}
+</body>
+</html>
+
+
+<!--<!DOCTYPE html>-->
+<!--<html lang="ar" dir="rtl">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--    <title>نظام إدارة المشكلات</title>-->
+
+<!--    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">-->
+<!--    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">-->
+
+<!--    <style>-->
+<!--        body {-->
+<!--            font-family: 'Tahoma', sans-serif;-->
+<!--            background-color: #f8f9fa;-->
+<!--            padding-top: 20px;-->
+<!--        }-->
+<!--        .container {-->
+<!--            max-width: 960px;-->
+<!--        }-->
+<!--        .navbar-brand-custom {-->
+<!--            font-weight: bold;-->
+<!--            font-size: 1.5rem;-->
+<!--        }-->
+<!--        .sentiment-badge {-->
+<!--            padding: 0.25em 0.5em;-->
+<!--            font-size: 0.70em;-->
+<!--            font-weight: bold;-->
+<!--            border-radius: 0.25rem;-->
+<!--            vertical-align: middle;-->
+<!--            margin-inline-start: 0.3rem;-->
+<!--        }-->
+<!--        .sentiment-positive { background-color: #d1e7dd; color: #0f5132; }-->
+<!--        .sentiment-negative { background-color: #f8d7da; color: #842029; }-->
+<!--        .sentiment-neutral { background-color: #e2e3e5; color: #41464b; }-->
+
+<!--        .index-tag-badge {-->
+<!--            font-size: 0.65em;-->
+<!--            padding: 0.2em 0.4em;-->
+<!--            margin-inline-start: 0.2rem;-->
+<!--            margin-bottom: 0.2rem;-->
+<!--            border: 1px solid #ced4da;-->
+<!--        }-->
+<!--        /* <<< إضافة: تنسيق لزر الحذف >>> */-->
+<!--        .btn-delete-problem {-->
+<!--            /* يمكنك إضافة أي تنسيقات خاصة هنا إذا أردت */-->
+<!--        }-->
+<!--    </style>-->
+<!--</head>-->
+<!--<body>-->
+<!--    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">-->
+<!--        <div class="container">-->
+<!--            <a class="navbar-brand navbar-brand-custom" href="{{ url_for('index') }}">-->
+<!--                <i class="fas fa-project-diagram"></i> نظام إدارة المشكلات-->
+<!--            </a>-->
+<!--            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">-->
+<!--                <span class="navbar-toggler-icon"></span>-->
+<!--            </button>-->
+<!--            <div class="collapse navbar-collapse" id="navbarNav">-->
+<!--                <ul class="navbar-nav ms-auto">-->
+<!--                    <li class="nav-item">-->
+<!--                        <a class="nav-link active" aria-current="page" href="{{ url_for('index') }}">الرئيسية</a>-->
+<!--                    </li>-->
+<!--                        <li class="nav-item">-->
+<!--                            <a class="nav-link btn btn-light btn-sm text-primary"-->
+<!--                               href="{{ url_for('add_problem') }}"-->
+<!--                               style="display: block !important; visibility: visible !important;">-->
+<!--                                <i class="fas fa-plus-circle"></i> إضافة مشكلة جديدة-->
+<!--                            </a>-->
+<!--                        </li>-->
+<!--                </ul>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </nav>-->
+
+<!--    <div class="container">-->
+<!--        {% with messages = get_flashed_messages(with_categories=true) %}-->
+<!--            {% if messages %}-->
+<!--                {% for category, message in messages %}-->
+<!--                    <div class="alert alert-{{ category if category != 'danger' else 'danger' }} alert-dismissible fade show" role="alert">-->
+<!--                        {{ message }}-->
+<!--                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>-->
+<!--                    </div>-->
+<!--                {% endfor %}-->
+<!--            {% endif %}-->
+<!--        {% endwith %}-->
+
+<!--        <div class="d-flex justify-content-between align-items-center mb-3">-->
+<!--            <h1><i class="fas fa-list-ul"></i> قائمة المشكلات</h1>-->
+<!--        </div>-->
+
+<!--        {% if problems %}-->
+<!--            <div class="list-group">-->
+<!--                {% for problem in problems %}-->
+<!--                <div class="list-group-item list-group-item-action flex-column align-items-start mb-2 shadow-sm problem-card border-start border-5-->
+<!--                            {% if problem.status == 'مفتوحة' %} border-primary-->
+<!--                            {% elif problem.status == 'قيد التحليل' %} border-info-->
+<!--                            {% elif problem.status == 'قيد التنفيذ' %} border-warning-->
+<!--                            {% elif problem.status == 'مغلقة' %} border-success-->
+<!--                            {% else %} border-secondary {% endif %}">-->
+<!--                    <div class="d-flex w-100 justify-content-between">-->
+<!--                        <h5 class="mb-1">-->
+<!--                            {{ problem.title }}-->
+<!--                            {% if problem.description_initial and problem.sentiment_label %}-->
+<!--                                <span class="sentiment-badge-->
+<!--                                    {% if problem.sentiment_label == 'إيجابي' %}sentiment-positive-->
+<!--                                    {% elif problem.sentiment_label == 'سلبي' %}sentiment-negative-->
+<!--                                    {% else %}sentiment-neutral{% endif %}"-->
+<!--                                    title="مشاعر الوصف: {{ problem.sentiment_label }} (الدرجة: {{ '%.2f'|format(problem.sentiment_score) if problem.sentiment_score is not none else 'N/A' }})">-->
+<!--                                    {% if problem.sentiment_label == 'إيجابي' %}<i class="fas fa-smile"></i>-->
+<!--                                    {% elif problem.sentiment_label == 'سلبي' %}<i class="fas fa-frown"></i>-->
+<!--                                    {% else %}<i class="fas fa-meh"></i>{% endif %}-->
+<!--                                </span>-->
+<!--                            {% endif %}-->
+<!--                        </h5>-->
+<!--                        <small class="text-muted">{{ problem.date_identified.strftime('%Y-%m-%d') }}</small>-->
+<!--                    </div>-->
+<!--                    <p class="mb-1">-->
+<!--                        <span class="badge-->
+<!--                            {% if problem.status == 'مفتوحة' %} bg-primary-->
+<!--                            {% elif problem.status == 'قيد التحليل' %} bg-info text-dark-->
+<!--                            {% elif problem.status == 'قيد التنفيذ' %} bg-warning text-dark-->
+<!--                            {% elif problem.status == 'مغلقة' %} bg-success-->
+<!--                            {% else %} bg-secondary {% endif %}">-->
+<!--                            {{ problem.status }}-->
+<!--                        </span>-->
+<!--                        <span class="badge bg-light text-dark border me-1">{{ problem.domain or 'غير محدد' }}</span>-->
+<!--                        <span class="badge bg-light text-dark border me-1">{{ problem.complexity_level or 'غير محدد' }}</span>-->
+
+<!--                        {% if problem.problem_tags and problem.problem_tags.strip() %}-->
+<!--                            {% set tags_list = problem.problem_tags.split(',') %}-->
+<!--                            {% for tag in tags_list[:2] %}-->
+<!--                                {% if tag.strip() %}-->
+<!--                                    <span class="badge bg-light text-dark index-tag-badge">{{ tag.strip() }}</span>-->
+<!--                                {% endif %}-->
+<!--                            {% endfor %}-->
+<!--                            {% if tags_list|length > 2 %}-->
+<!--                                <span class="badge bg-light text-dark index-tag-badge">...</span>-->
+<!--                            {% endif %}-->
+<!--                        {% endif %}-->
+<!--                    </p>-->
+<!--                    <small class="text-muted">-->
+<!--                        {% if problem.description_initial %}-->
+<!--                            {{ problem.description_initial[:120] | nl2br }}...-->
+<!--                        {% else %}-->
+<!--                            لا يوجد وصف أولي.-->
+<!--                        {% endif %}-->
+<!--                    </small>-->
+<!--                    <div class="mt-2">-->
+<!--                        <a href="{{ url_for('problem_details', problem_id=problem.id) }}" class="btn btn-outline-primary btn-sm">-->
+<!--                            <i class="fas fa-eye"></i> عرض التفاصيل-->
+<!--                        </a>-->
+<!--                        <a href="{{ url_for('edit_problem', problem_id=problem.id) }}" class="btn btn-outline-secondary btn-sm">-->
+<!--                            <i class="fas fa-edit"></i> تعديل-->
+<!--                        </a>-->
+<!--                        {# === بداية إضافة زر الحذف مع تأكيد JavaScript === #}-->
+<!--                        <form method="POST" action="{{ url_for('delete_problem', problem_id=problem.id) }}" style="display: inline-block;" onsubmit="return confirm('هل أنت متأكد أنك تريد حذف هذه المشكلة بشكل نهائي؟ هذا الإجراء لا يمكن التراجع عنه.');">-->
+<!--                            <button type="submit" class="btn btn-outline-danger btn-sm btn-delete-problem">-->
+<!--                                <i class="fas fa-trash-alt"></i> حذف-->
+<!--                            </button>-->
+<!--                        </form>-->
+<!--                        {# === نهاية إضافة زر الحذف === #}-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--                {% endfor %}-->
+<!--            </div>-->
+<!--        {% else %}-->
+<!--            <div class="alert alert-info text-center" role="alert">-->
+<!--                <i class="fas fa-info-circle"></i> لا توجد مشاكل مدرجة حاليًا. قم بإضافة مشكلة جديدة!-->
+<!--            </div>-->
+<!--        {% endif %}-->
+<!--    </div>-->
+
+<!--    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>-->
+<!--    {# لا نحتاج لـ keyword_suggester.js في هذه الصفحة حاليًا #}-->
+<!--</body>-->
+<!--</html>-->

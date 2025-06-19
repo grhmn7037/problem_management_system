@@ -1,0 +1,208 @@
+// Database Schema Tree
+digraph {
+	alembic_version [label=alembic_version color=lightblue shape=box style=filled]
+	alembic_version_version_num [label=version_num color=lightgray shape=ellipse style=filled]
+	alembic_version -> alembic_version_version_num
+	cause_analysis [label=cause_analysis color=lightblue shape=box style=filled]
+	cause_analysis_id [label=id color=lightgray shape=ellipse style=filled]
+	cause_analysis -> cause_analysis_id
+	cause_analysis_problem_id [label=problem_id color=lightgray shape=ellipse style=filled]
+	cause_analysis -> cause_analysis_problem_id
+	cause_analysis_data_collection_methods_deep [label=data_collection_methods_deep color=lightgray shape=ellipse style=filled]
+	cause_analysis -> cause_analysis_data_collection_methods_deep
+	cause_analysis_data_analysis_techniques_used [label=data_analysis_techniques_used color=lightgray shape=ellipse style=filled]
+	cause_analysis -> cause_analysis_data_analysis_techniques_used
+	cause_analysis_key_findings_from_analysis [label=key_findings_from_analysis color=lightgray shape=ellipse style=filled]
+	cause_analysis -> cause_analysis_key_findings_from_analysis
+	cause_analysis_last_updated [label=last_updated color=lightgray shape=ellipse style=filled]
+	cause_analysis -> cause_analysis_last_updated
+	chosen_solution [label=chosen_solution color=lightblue shape=box style=filled]
+	chosen_solution_id [label=id color=lightgray shape=ellipse style=filled]
+	chosen_solution -> chosen_solution_id
+	chosen_solution_problem_id [label=problem_id color=lightgray shape=ellipse style=filled]
+	chosen_solution -> chosen_solution_problem_id
+	chosen_solution_proposed_solution_id [label=proposed_solution_id color=lightgray shape=ellipse style=filled]
+	chosen_solution -> chosen_solution_proposed_solution_id
+	chosen_solution_justification_for_choice [label=justification_for_choice color=lightgray shape=ellipse style=filled]
+	chosen_solution -> chosen_solution_justification_for_choice
+	chosen_solution_approval_status [label=approval_status color=lightgray shape=ellipse style=filled]
+	chosen_solution -> chosen_solution_approval_status
+	chosen_solution_date_chosen [label=date_chosen color=lightgray shape=ellipse style=filled]
+	chosen_solution -> chosen_solution_date_chosen
+	implementation_plan [label=implementation_plan color=lightblue shape=box style=filled]
+	implementation_plan_id [label=id color=lightgray shape=ellipse style=filled]
+	implementation_plan -> implementation_plan_id
+	implementation_plan_chosen_solution_id [label=chosen_solution_id color=lightgray shape=ellipse style=filled]
+	implementation_plan -> implementation_plan_chosen_solution_id
+	implementation_plan_plan_description [label=plan_description color=lightgray shape=ellipse style=filled]
+	implementation_plan -> implementation_plan_plan_description
+	implementation_plan_overall_status [label=overall_status color=lightgray shape=ellipse style=filled]
+	implementation_plan -> implementation_plan_overall_status
+	implementation_plan_start_date_planned [label=start_date_planned color=lightgray shape=ellipse style=filled]
+	implementation_plan -> implementation_plan_start_date_planned
+	implementation_plan_end_date_planned [label=end_date_planned color=lightgray shape=ellipse style=filled]
+	implementation_plan -> implementation_plan_end_date_planned
+	implementation_plan_start_date_actual [label=start_date_actual color=lightgray shape=ellipse style=filled]
+	implementation_plan -> implementation_plan_start_date_actual
+	implementation_plan_end_date_actual [label=end_date_actual color=lightgray shape=ellipse style=filled]
+	implementation_plan -> implementation_plan_end_date_actual
+	implementation_plan_overall_budget [label=overall_budget color=lightgray shape=ellipse style=filled]
+	implementation_plan -> implementation_plan_overall_budget
+	implementation_plan_key_personnel [label=key_personnel color=lightgray shape=ellipse style=filled]
+	implementation_plan -> implementation_plan_key_personnel
+	implementation_plan_last_updated [label=last_updated color=lightgray shape=ellipse style=filled]
+	implementation_plan -> implementation_plan_last_updated
+	implementation_task [label=implementation_task color=lightblue shape=box style=filled]
+	implementation_task_id [label=id color=lightgray shape=ellipse style=filled]
+	implementation_task -> implementation_task_id
+	implementation_task_plan_id [label=plan_id color=lightgray shape=ellipse style=filled]
+	implementation_task -> implementation_task_plan_id
+	implementation_task_task_description [label=task_description color=lightgray shape=ellipse style=filled]
+	implementation_task -> implementation_task_task_description
+	implementation_task_assigned_to [label=assigned_to color=lightgray shape=ellipse style=filled]
+	implementation_task -> implementation_task_assigned_to
+	implementation_task_priority [label=priority color=lightgray shape=ellipse style=filled]
+	implementation_task -> implementation_task_priority
+	implementation_task_task_status [label=task_status color=lightgray shape=ellipse style=filled]
+	implementation_task -> implementation_task_task_status
+	implementation_task_due_date [label=due_date color=lightgray shape=ellipse style=filled]
+	implementation_task -> implementation_task_due_date
+	implementation_task_completion_date [label=completion_date color=lightgray shape=ellipse style=filled]
+	implementation_task -> implementation_task_completion_date
+	implementation_task_notes [label=notes color=lightgray shape=ellipse style=filled]
+	implementation_task -> implementation_task_notes
+	kpi_measurement [label=kpi_measurement color=lightblue shape=box style=filled]
+	kpi_measurement_id [label=id color=lightgray shape=ellipse style=filled]
+	kpi_measurement -> kpi_measurement_id
+	kpi_measurement_kpi_id [label=kpi_id color=lightgray shape=ellipse style=filled]
+	kpi_measurement -> kpi_measurement_kpi_id
+	kpi_measurement_measurement_date [label=measurement_date color=lightgray shape=ellipse style=filled]
+	kpi_measurement -> kpi_measurement_measurement_date
+	kpi_measurement_actual_value [label=actual_value color=lightgray shape=ellipse style=filled]
+	kpi_measurement -> kpi_measurement_actual_value
+	kpi_measurement_notes [label=notes color=lightgray shape=ellipse style=filled]
+	kpi_measurement -> kpi_measurement_notes
+	lesson_learned [label=lesson_learned color=lightblue shape=box style=filled]
+	lesson_learned_id [label=id color=lightgray shape=ellipse style=filled]
+	lesson_learned -> lesson_learned_id
+	lesson_learned_problem_id [label=problem_id color=lightgray shape=ellipse style=filled]
+	lesson_learned -> lesson_learned_problem_id
+	lesson_learned_what_went_well [label=what_went_well color=lightgray shape=ellipse style=filled]
+	lesson_learned -> lesson_learned_what_went_well
+	lesson_learned_what_could_be_improved [label=what_could_be_improved color=lightgray shape=ellipse style=filled]
+	lesson_learned -> lesson_learned_what_could_be_improved
+	lesson_learned_recommendations_for_future [label=recommendations_for_future color=lightgray shape=ellipse style=filled]
+	lesson_learned -> lesson_learned_recommendations_for_future
+	lesson_learned_key_takeaways [label=key_takeaways color=lightgray shape=ellipse style=filled]
+	lesson_learned -> lesson_learned_key_takeaways
+	lesson_learned_last_updated [label=last_updated color=lightgray shape=ellipse style=filled]
+	lesson_learned -> lesson_learned_last_updated
+	potential_root_cause [label=potential_root_cause color=lightblue shape=box style=filled]
+	potential_root_cause_id [label=id color=lightgray shape=ellipse style=filled]
+	potential_root_cause -> potential_root_cause_id
+	potential_root_cause_analysis_id [label=analysis_id color=lightgray shape=ellipse style=filled]
+	potential_root_cause -> potential_root_cause_analysis_id
+	potential_root_cause_cause_description [label=cause_description color=lightgray shape=ellipse style=filled]
+	potential_root_cause -> potential_root_cause_cause_description
+	potential_root_cause_evidence_supporting_cause [label=evidence_supporting_cause color=lightgray shape=ellipse style=filled]
+	potential_root_cause -> potential_root_cause_evidence_supporting_cause
+	potential_root_cause_validation_status [label=validation_status color=lightgray shape=ellipse style=filled]
+	potential_root_cause -> potential_root_cause_validation_status
+	potential_root_cause_impact_of_cause [label=impact_of_cause color=lightgray shape=ellipse style=filled]
+	potential_root_cause -> potential_root_cause_impact_of_cause
+	problem [label=problem color=lightblue shape=box style=filled]
+	problem_id [label=id color=lightgray shape=ellipse style=filled]
+	problem -> problem_id
+	problem_title [label=title color=lightgray shape=ellipse style=filled]
+	problem -> problem_title
+	problem_description_initial [label=description_initial color=lightgray shape=ellipse style=filled]
+	problem -> problem_description_initial
+	problem_domain [label=domain color=lightgray shape=ellipse style=filled]
+	problem -> problem_domain
+	problem_complexity_level [label=complexity_level color=lightgray shape=ellipse style=filled]
+	problem -> problem_complexity_level
+	problem_date_identified [label=date_identified color=lightgray shape=ellipse style=filled]
+	problem -> problem_date_identified
+	problem_date_closed [label=date_closed color=lightgray shape=ellipse style=filled]
+	problem -> problem_date_closed
+	problem_status [label=status color=lightgray shape=ellipse style=filled]
+	problem -> problem_status
+	problem_stakeholders_involved [label=stakeholders_involved color=lightgray shape=ellipse style=filled]
+	problem -> problem_stakeholders_involved
+	problem_initial_impact_assessment [label=initial_impact_assessment color=lightgray shape=ellipse style=filled]
+	problem -> problem_initial_impact_assessment
+	problem_problem_source [label=problem_source color=lightgray shape=ellipse style=filled]
+	problem -> problem_problem_source
+	problem_refined_problem_statement_final [label=refined_problem_statement_final color=lightgray shape=ellipse style=filled]
+	problem -> problem_refined_problem_statement_final
+	problem_sentiment_score [label=sentiment_score color=lightgray shape=ellipse style=filled]
+	problem -> problem_sentiment_score
+	problem_sentiment_label [label=sentiment_label color=lightgray shape=ellipse style=filled]
+	problem -> problem_sentiment_label
+	problem_problem_tags [label=problem_tags color=lightgray shape=ellipse style=filled]
+	problem -> problem_problem_tags
+	problem_ai_generated_summary [label=ai_generated_summary color=lightgray shape=ellipse style=filled]
+	problem -> problem_ai_generated_summary
+	problem_understanding [label=problem_understanding color=lightblue shape=box style=filled]
+	problem_understanding_id [label=id color=lightgray shape=ellipse style=filled]
+	problem_understanding -> problem_understanding_id
+	problem_understanding_problem_id [label=problem_id color=lightgray shape=ellipse style=filled]
+	problem_understanding -> problem_understanding_problem_id
+	problem_understanding_active_listening_notes [label=active_listening_notes color=lightgray shape=ellipse style=filled]
+	problem_understanding -> problem_understanding_active_listening_notes
+	problem_understanding_key_questions_asked [label=key_questions_asked color=lightgray shape=ellipse style=filled]
+	problem_understanding -> problem_understanding_key_questions_asked
+	problem_understanding_initial_data_sources [label=initial_data_sources color=lightgray shape=ellipse style=filled]
+	problem_understanding -> problem_understanding_initial_data_sources
+	problem_understanding_initial_hypotheses [label=initial_hypotheses color=lightgray shape=ellipse style=filled]
+	problem_understanding -> problem_understanding_initial_hypotheses
+	problem_understanding_stakeholder_feedback_initial [label=stakeholder_feedback_initial color=lightgray shape=ellipse style=filled]
+	problem_understanding -> problem_understanding_stakeholder_feedback_initial
+	problem_understanding_refined_problem_statement_early [label=refined_problem_statement_early color=lightgray shape=ellipse style=filled]
+	problem_understanding -> problem_understanding_refined_problem_statement_early
+	problem_understanding_last_updated [label=last_updated color=lightgray shape=ellipse style=filled]
+	problem_understanding -> problem_understanding_last_updated
+	proposed_solution [label=proposed_solution color=lightblue shape=box style=filled]
+	proposed_solution_id [label=id color=lightgray shape=ellipse style=filled]
+	proposed_solution -> proposed_solution_id
+	proposed_solution_problem_id [label=problem_id color=lightgray shape=ellipse style=filled]
+	proposed_solution -> proposed_solution_problem_id
+	proposed_solution_solution_description [label=solution_description color=lightgray shape=ellipse style=filled]
+	proposed_solution -> proposed_solution_solution_description
+	proposed_solution_generation_method [label=generation_method color=lightgray shape=ellipse style=filled]
+	proposed_solution -> proposed_solution_generation_method
+	proposed_solution_estimated_cost [label=estimated_cost color=lightgray shape=ellipse style=filled]
+	proposed_solution -> proposed_solution_estimated_cost
+	proposed_solution_estimated_time_to_implement [label=estimated_time_to_implement color=lightgray shape=ellipse style=filled]
+	proposed_solution -> proposed_solution_estimated_time_to_implement
+	proposed_solution_potential_benefits [label=potential_benefits color=lightgray shape=ellipse style=filled]
+	proposed_solution -> proposed_solution_potential_benefits
+	proposed_solution_potential_risks [label=potential_risks color=lightgray shape=ellipse style=filled]
+	proposed_solution -> proposed_solution_potential_risks
+	proposed_solution_is_chosen [label=is_chosen color=lightgray shape=ellipse style=filled]
+	proposed_solution -> proposed_solution_is_chosen
+	solution_evaluation_criterion [label=solution_evaluation_criterion color=lightblue shape=box style=filled]
+	solution_evaluation_criterion_id [label=id color=lightgray shape=ellipse style=filled]
+	solution_evaluation_criterion -> solution_evaluation_criterion_id
+	solution_evaluation_criterion_name [label=name color=lightgray shape=ellipse style=filled]
+	solution_evaluation_criterion -> solution_evaluation_criterion_name
+	solution_evaluation_criterion_description [label=description color=lightgray shape=ellipse style=filled]
+	solution_evaluation_criterion -> solution_evaluation_criterion_description
+	solution_kpi [label=solution_kpi color=lightblue shape=box style=filled]
+	solution_kpi_id [label=id color=lightgray shape=ellipse style=filled]
+	solution_kpi -> solution_kpi_id
+	solution_kpi_chosen_solution_id [label=chosen_solution_id color=lightgray shape=ellipse style=filled]
+	solution_kpi -> solution_kpi_chosen_solution_id
+	solution_kpi_kpi_name [label=kpi_name color=lightgray shape=ellipse style=filled]
+	solution_kpi -> solution_kpi_kpi_name
+	solution_kpi_kpi_description [label=kpi_description color=lightgray shape=ellipse style=filled]
+	solution_kpi -> solution_kpi_kpi_description
+	solution_kpi_target_value [label=target_value color=lightgray shape=ellipse style=filled]
+	solution_kpi -> solution_kpi_target_value
+	solution_kpi_current_value_baseline [label=current_value_baseline color=lightgray shape=ellipse style=filled]
+	solution_kpi -> solution_kpi_current_value_baseline
+	solution_kpi_measurement_unit [label=measurement_unit color=lightgray shape=ellipse style=filled]
+	solution_kpi -> solution_kpi_measurement_unit
+	solution_kpi_measurement_frequency [label=measurement_frequency color=lightgray shape=ellipse style=filled]
+	solution_kpi -> solution_kpi_measurement_frequency
+}

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفاصيل المشكلة: {{ problem.title }}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Tahoma', sans-serif;
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+        .main-header {
+            text-align: center;
+            color: #0056b3;
+            margin-bottom: 25px;
+            font-size: 2.2rem;
+        }
+        .problem-meta-card {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+        }
+        .problem-meta-card .card-header {
+            background-color: #e9ecef;
+            font-weight: bold;
+        }
+        .problem-meta-card p {
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+        .problem-meta-card strong {
+            min-width: 190px; /* قد تحتاج لتعديل هذا بناءً على أطول عنوان لديك */
+            display: inline-block;
+        }
+        .problem-meta-card i.fas {
+            margin-left: 8px;
+            color: #0d6efd;
+            width: 20px;
+            text-align: center;
+        }
+        .sentiment-info {
+            padding: 0.3rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.85em;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 0.2rem;
+        }
+        .sentiment-positive { background-color: #d1e7dd; color: #0f5132; }
+        .sentiment-negative { background-color: #f8d7da; color: #842029; }
+        .sentiment-neutral { background-color: #e2e3e5; color: #41464b; }
+
+        .tag-badge {
+            font-size: 0.8em;
+            margin-inline-end: 0.3rem;
+            margin-bottom: 0.3rem;
+            padding: 0.3em 0.5em;
+        }
+        .summary-text { /* تنسيق للملخص */
+            font-style: italic;
+            color: #555;
+            display: block;
+            padding-top: 0.2rem;
+            background-color: #fcfcfc; /* خلفية فاتحة جدًا للملخص */
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            border: 1px dashed #eee; /* حد منقط خفيف */
+        }
+
+        .steps-container .card { margin-bottom: 1.5rem; }
+        .steps-container .card-header { background-color: #0d6efd; color: white; font-size: 1.25rem; }
+        .steps-container .card-header i.fas { margin-left: 10px; }
+        .steps-container .card-body h5 { font-size: 1.1rem; color: #343a40; margin-top: 1rem; margin-bottom: 0.5rem; border-bottom: 1px dashed #ced4da; padding-bottom: 0.5rem; }
+        .steps-container .card-body h5:first-child { margin-top: 0; }
+        .list-group-item { font-size: 0.95rem; }
+        .list-group-item strong { color: #495057; }
+        .no-details { font-style: italic; color: #6c757d; padding: 10px; background-color: #f8f9fa; border-radius: .25rem; }
+        .chosen-solution-highlight .card-body { border-left: 5px solid #198754; background-color: #f0fff0; }
+        .action-link { font-size: 0.85rem; margin-right: 15px; vertical-align: middle; }
+        .actions-bar { margin-top: 2rem; text-align: center; padding-top: 1.5rem; border-top: 1px solid #dee2e6; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand" style="font-weight: bold; font-size: 1.5rem;" href="{{ url_for('index') }}">
+                <i class="fas fa-project-diagram"></i> نظام إدارة المشكلات
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'index' else '' }}" href="{{ url_for('index') }}">الرئيسية</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-light btn-sm text-primary {{ 'active' if request.endpoint == 'add_problem' else '' }}" href="{{ url_for('add_problem') }}">
+                            <i class="fas fa-plus-circle"></i> إضافة مشكلة جديدة
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 class="main-header"><i class="fas fa-sitemap"></i> تفاصيل المشكلة</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'danger' else 'danger' }} alert-dismissible fade show mt-3" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="card problem-meta-card mb-4">
+            <div class="card-header">
+                <i class="fas fa-info-circle"></i> معلومات المشكلة الأساسية
+            </div>
+            <div class="card-body problem-meta-details">
+                <p><strong><i class="fas fa-heading"></i> العنوان:</strong> {{ problem.title }}</p>
+
+                {% if problem.description_initial %}
+                    <p><strong><i class="fas fa-align-left"></i> الوصف الأولي:</strong></p>
+                    <div class="ms-4 mb-2" style="white-space: pre-wrap;">{{ problem.description_initial | nl2br }}</div>
+                {% else %}
+                    <p><strong><i class="fas fa-align-left"></i> الوصف الأولي:</strong> <span class="text-muted">لا يوجد</span></p>
+                {% endif %}
+
+                {# === بداية عرض الملخص المقترح بواسطة AI === #}
+                {% if problem.ai_generated_summary %}
+                <p class="mt-2">
+                    <strong><i class="fas fa-magic"></i> الملخص المقترح (AI):</strong><br>
+                    <span class="summary-text ms-4">{{ problem.ai_generated_summary | nl2br }}</span>
+                </p>
+                {% endif %}
+                {# === نهاية عرض الملخص === #}
+
+                {% if problem.description_initial and problem.sentiment_label %}
+                <p class="mt-2">
+                    <strong><i class="fas fa-smile-beam"></i> تحليل المشاعر للوصف:</strong>
+                    <span class="sentiment-info
+                        {% if problem.sentiment_label == 'إيجابي' %}sentiment-positive
+                        {% elif problem.sentiment_label == 'سلبي' %}sentiment-negative
+                        {% else %}sentiment-neutral{% endif %}">
+                        {{ problem.sentiment_label }}
+                    </span>
+                    {% if problem.sentiment_score is not none %}
+                        <small class="text-muted">(الدرجة: {{ "%.2f"|format(problem.sentiment_score) }})</small>
+                    {% endif %}
+                </p>
+                {% endif %}
+
+                <p class="mt-2">
+                    <strong><i class="fas fa-tags"></i> الكلمات المفتاحية:</strong>
+                    {% if problem.problem_tags and problem.problem_tags.strip() %}
+                        {% set tags_list = problem.problem_tags.split(',') %}
+                        {% for tag in tags_list %}
+                            {% if tag.strip() %}
+                                <span class="badge bg-secondary tag-badge">{{ tag.strip() }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <span class="text-muted">لا توجد كلمات مفتاحية محددة.</span>
+                    {% endif %}
+                </p>
+
+                <p><strong><i class="fas fa-globe"></i> المجال:</strong> {{ problem.domain or 'غير محدد' }}</p>
+                <p><strong><i class="fas fa-signal"></i> مستوى التعقيد:</strong> {{ problem.complexity_level or 'غير محدد' }}</p>
+                <p><strong><i class="fas fa-calendar-alt"></i> تاريخ التحديد:</strong> {{ problem.date_identified.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong><i class="fas fa-calendar-check"></i> تاريخ الإغلاق:</strong> {{ problem.date_closed.strftime('%Y-%m-%d %H:%M') if problem.date_closed else 'لم تغلق بعد' }}</p>
+                <p><strong><i class="fas fa-clipboard-list"></i> الحالة:</strong> <span class="badge {% if problem.status == 'مفتوحة' %} bg-primary {% elif problem.status == 'قيد التحليل' %} bg-info text-dark {% elif problem.status == 'قيد التنفيذ' %} bg-warning text-dark {% elif problem.status == 'مغلقة' %} bg-success {% else %} bg-secondary {% endif %}">{{ problem.status }}</span></p>
+
+                {% if problem.stakeholders_involved %}
+                    <p><strong><i class="fas fa-users"></i> الأطراف المعنية:</strong></p>
+                    <div class="ms-4 mb-2" style="white-space: pre-wrap;">{{ problem.stakeholders_involved | nl2br }}</div>
+                {% else %}
+                     <p><strong><i class="fas fa-users"></i> الأطراف المعنية:</strong> <span class="text-muted">غير محدد</span></p>
+                {% endif %}
+
+                {% if problem.initial_impact_assessment %}
+                    <p><strong><i class="fas fa-chart-line"></i> تقييم التأثير الأولي:</strong></p>
+                    <div class="ms-4 mb-2" style="white-space: pre-wrap;">{{ problem.initial_impact_assessment | nl2br }}</div>
+                {% else %}
+                    <p><strong><i class="fas fa-chart-line"></i> تقييم التأثير الأولي:</strong> <span class="text-muted">غير محدد</span></p>
+                {% endif %}
+
+                <p><strong><i class="fas fa-bullseye"></i> مصدر المشكلة:</strong> {{ problem.problem_source or 'غير محدد' }}</p>
+
+                {% if problem.refined_problem_statement_final %}
+                    <p><strong><i class="fas fa-pencil-ruler"></i> صياغة المشكلة النهائية:</strong></p>
+                    <div class="ms-4 mb-2" style="white-space: pre-wrap;">{{ problem.refined_problem_statement_final | nl2br }}</div>
+                {% else %}
+                    <p><strong><i class="fas fa-pencil-ruler"></i> صياغة المشكلة النهائية:</strong> <span class="text-muted">لم تحدد بعد</span></p>
+                {% endif %}
+            </div>
+        </div>
+
+        <h2 class="section-title mt-5"><i class="fas fa-project-diagram"></i> خطوات إدارة المشكلة</h2>
+        <div class="steps-container">
+            <!-- الخطوة 1: فهم المشكلة الأولية -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-search"></i> 1. فهم المشكلة الأولية
+                    <a href="{{ url_for('manage_understanding', problem_id=problem.id) }}" class="float-start action-link link-light">
+                        <i class="fas fa-edit"></i> إضافة/تعديل
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if problem.understanding_details %}
+                        <h5>ملاحظات الاستماع الفعال:</h5><p>{{ problem.understanding_details.active_listening_notes | nl2br if problem.understanding_details.active_listening_notes else 'لا توجد' }}</p>
+                        <h5>الأسئلة الرئيسية المطروحة:</h5><p>{{ problem.understanding_details.key_questions_asked | nl2br if problem.understanding_details.key_questions_asked else 'لا توجد' }}</p>
+                        <h5>مصادر البيانات الأولية:</h5><p>{{ problem.understanding_details.initial_data_sources | nl2br if problem.understanding_details.initial_data_sources else 'لا توجد' }}</p>
+                        <h5>الفرضيات الأولية:</h5><p>{{ problem.understanding_details.initial_hypotheses | nl2br if problem.understanding_details.initial_hypotheses else 'لا توجد' }}</p>
+                        <h5>ملاحظات الأطراف المعنية (أولي):</h5><p>{{ problem.understanding_details.stakeholder_feedback_initial | nl2br if problem.understanding_details.stakeholder_feedback_initial else 'لا توجد' }}</p>
+                        <h5>صياغة المشكلة المنقحة (أولي):</h5><p>{{ problem.understanding_details.refined_problem_statement_early | nl2br if problem.understanding_details.refined_problem_statement_early else 'لا توجد' }}</p>
+                        <p class="text-muted mt-2"><small><i>آخر تحديث: {{ problem.understanding_details.last_updated.strftime('%Y-%m-%d %H:%M') }}</i></small></p>
+                    {% else %}
+                        <p class="no-details"><i>لم يتم إضافة تفاصيل مرحلة فهم المشكلة بعد.</i></p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- الخطوة 2: تحليل المشكلة وتحديد الأسباب الجذرية -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-microscope"></i> 2. تحليل المشكلة وتحديد الأسباب الجذرية
+                     <a href="{{ url_for('manage_cause_analysis', problem_id=problem.id) }}" class="float-start action-link link-light">
+                        <i class="fas fa-edit"></i> إضافة/تعديل
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if problem.cause_analysis_details %}
+                        <h5>طرق جمع البيانات المعمقة:</h5><p>{{ problem.cause_analysis_details.data_collection_methods_deep | nl2br if problem.cause_analysis_details.data_collection_methods_deep else 'لا توجد' }}</p>
+                        <h5>تقنيات تحليل البيانات المستخدمة:</h5><p>{{ problem.cause_analysis_details.data_analysis_techniques_used | nl2br if problem.cause_analysis_details.data_analysis_techniques_used else 'لا توجد' }}</p>
+                        <h5>النتائج الرئيسية من التحليل:</h5><p>{{ problem.cause_analysis_details.key_findings_from_analysis | nl2br if problem.cause_analysis_details.key_findings_from_analysis else 'لا توجد' }}</p>
+
+                        <h5>الأسباب الجذرية المحتملة ({{ problem.cause_analysis_details.potential_root_causes.count() }}):</h5>
+                        {% if problem.cause_analysis_details.potential_root_causes.all() %}
+                            <ul class="list-group list-group-flush">
+                            {% for cause in problem.cause_analysis_details.potential_root_causes.order_by(PotentialRootCause.id) %}
+                                <li class="list-group-item">
+                                    <strong>{{ cause.cause_description }}</strong> <span class="badge bg-secondary">{{ cause.validation_status }}</span><br>
+                                    <small>الأدلة: {{ cause.evidence_supporting_cause or 'لا يوجد' }} | التأثير: {{ cause.impact_of_cause or 'غير محدد' }}</small>
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="no-details"><i>لم يتم تحديد أسباب جذرية بعد.</i></p>
+                        {% endif %}
+                        <p class="text-muted mt-2"><small><i>آخر تحديث للتحليل: {{ problem.cause_analysis_details.last_updated.strftime('%Y-%m-%d %H:%M') }}</i></small></p>
+                    {% else %}
+                         <p class="no-details"><i>لم يتم إضافة تفاصيل مرحلة تحليل الأسباب بعد.</i></p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- الخطوة 3: توليد وتقييم الحلول -->
+            <div class="card">
+                <div class="card-header">
+                     <i class="fas fa-lightbulb"></i> 3. توليد وتقييم الحلول
+                     <a href="{{ url_for('manage_solutions', problem_id=problem.id) }}" class="float-start action-link link-light">
+                        <i class="fas fa-cogs"></i> إدارة الحلول
+                    </a>
+                </div>
+                <div class="card-body">
+                    <h5>الحلول المقترحة ({{ problem.proposed_solutions.count() }}):</h5>
+                    {% if problem.proposed_solutions.all() %}
+                        <ul class="list-group list-group-flush">
+                        {% for sol in problem.proposed_solutions.order_by(ProposedSolution.id) %}
+                            <li class="list-group-item {{ 'list-group-item-success' if sol.is_chosen else '' }}">
+                                <strong>{{ sol.solution_description }}</strong>
+                                {% if sol.is_chosen %} <span class="badge bg-success float-start">تم اختياره</span>{% endif %}<br>
+                                <small>طريقة التوليد: {{ sol.generation_method or 'غير محدد' }} | التكلفة: {{ sol.estimated_cost or 'N/A' }} | الوقت: {{ sol.estimated_time_to_implement or 'N/A' }}</small>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="no-details"><i>لم يتم اقتراح أي حلول بعد.</i></p>
+                    {% endif %}
+
+                    <h5 class="mt-3">الحلول المختارة ({{ problem.chosen_solutions.count() }}):</h5>
+                     {% if problem.chosen_solutions.all() %}
+                        <ul class="list-group list-group-flush">
+                        {% for chosen_sol_entry in problem.chosen_solutions.order_by(ChosenSolution.date_chosen.desc()) %}
+                            <li class="list-group-item list-group-item-success">
+                                <strong>{{ chosen_sol_entry.proposed_solution_details.solution_description if chosen_sol_entry.proposed_solution_details else 'تفاصيل الحل غير متاحة' }}</strong><br>
+                                <small>تاريخ الاختيار: {{ chosen_sol_entry.date_chosen.strftime('%Y-%m-%d') }} | مبررات: {{ chosen_sol_entry.justification_for_choice or 'لم تقدم' }}</small>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="no-details"><i>لم يتم اختيار أي حل بشكل نهائي بعد.</i></p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- الخطوة 4: تخطيط وتنفيذ الحل المختار -->
+             <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-clipboard-check"></i> 4. تخطيط وتنفيذ الحل المختار
+                </div>
+                <div class="card-body">
+                {% if problem.chosen_solutions.all() %}
+                    {% for chosen_sol in problem.chosen_solutions.order_by(ChosenSolution.id) %}
+                        <div class="mb-3 p-2 border rounded {{ 'chosen-solution-highlight' if chosen_sol.implementation_plan else '' }}">
+                            <h5>خطة تنفيذ للحل: "{{ chosen_sol.proposed_solution_details.solution_description if chosen_sol.proposed_solution_details else 'غير محدد' }}"
+                                <a href="{{ url_for('manage_implementation_plan', chosen_solution_id=chosen_sol.id) }}" class="action-link link-primary">
+                                    <i class="fas fa-tasks"></i> إدارة الخطة والمهام
+                                </a>
+                            </h5>
+                            {% if chosen_sol.implementation_plan %}
+                                <p><small>الحالة العامة: <span class="badge bg-secondary">{{ chosen_sol.implementation_plan.overall_status }}</span> | المهام: <span class="badge bg-info">{{ chosen_sol.implementation_plan.tasks.count() }}</span></small></p>
+                            {% else %}
+                                <p class="no-details"><i>لم يتم إنشاء خطة تنفيذ لهذا الحل المختار بعد.</i></p>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="no-details"><i>يجب اختيار حل أولاً لتتمكن من وضع خطة تنفيذ.</i></p>
+                {% endif %}
+                </div>
+            </div>
+
+            <!-- الخطوة 5: المتابعة والتقييم -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar"></i> 5. المتابعة والتقييم (KPIs)
+                </div>
+                <div class="card-body">
+                {% if problem.chosen_solutions.all() %}
+                    {% for chosen_sol in problem.chosen_solutions.order_by(ChosenSolution.id) %}
+                        <div class="mb-3 p-2 border rounded">
+                             <h5>مؤشرات للحل: "{{ chosen_sol.proposed_solution_details.solution_description if chosen_sol.proposed_solution_details else 'غير محدد' }}"
+                                 <a href="{{ url_for('manage_kpis', chosen_solution_id=chosen_sol.id) }}" class="action-link link-primary">
+                                    <i class="fas fa-tachometer-alt"></i> إدارة المؤشرات
+                                </a>
+                            </h5>
+                            {% if chosen_sol.kpis.all() %}
+                                <ul class="list-group list-group-flush" style="font-size:0.9em;">
+                                {% for kpi in chosen_sol.kpis.order_by(SolutionKPI.id) %}
+                                    <li class="list-group-item">
+                                        {{ kpi.kpi_name }} (الهدف: {{ kpi.target_value or 'N/A' }}) -
+                                        آخر قياس:
+                                        {% set last_measurement = kpi.measurements.order_by(KPIMeasurement.measurement_date.desc()).first() %}
+                                        <span class="fw-bold">{{ last_measurement.actual_value if last_measurement else 'لا يوجد' }}</span>
+                                        {{ kpi.measurement_unit or '' }}
+                                        {% if last_measurement %} <small class="text-muted">({{ last_measurement.measurement_date.strftime('%Y-%m-%d') }})</small> {% endif %}
+                                    </li>
+                                {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p class="no-details" style="font-size:0.9em;"><i>لم يتم تحديد مؤشرات أداء لهذا الحل بعد.</i></p>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="no-details"><i>يجب اختيار حل أولاً لتتمكن من تحديد مؤشرات الأداء.</i></p>
+                {% endif %}
+                </div>
+            </div>
+
+            <!-- الخطوة 6: توثيق الدروس المستفادة وإغلاق المشكلة -->
+            <div class="card">
+                <div class="card-header">
+                     <i class="fas fa-book-open"></i> 6. توثيق الدروس المستفادة وإغلاق المشكلة
+                     <a href="{{ url_for('manage_lessons_learned', problem_id=problem.id) }}" class="float-start action-link link-light">
+                        <i class="fas fa-archive"></i> إدارة التوثيق والإغلاق
+                    </a>
+                </div>
+                <div class="card-body">
+                {% if problem.lessons_learned %}
+                    <h5>ما الذي سار بشكل جيد:</h5><p>{{ problem.lessons_learned.what_went_well | nl2br if problem.lessons_learned.what_went_well else 'لم يحدد' }}</p>
+                    <h5>ما الذي كان يمكن تحسينه:</h5><p>{{ problem.lessons_learned.what_could_be_improved | nl2br if problem.lessons_learned.what_could_be_improved else 'لم يحدد' }}</p>
+                    <h5>توصيات للمستقبل:</h5><p>{{ problem.lessons_learned.recommendations_for_future | nl2br if problem.lessons_learned.recommendations_for_future else 'لم يحدد' }}</p>
+                    <h5>الخلاصات الرئيسية:</h5><p>{{ problem.lessons_learned.key_takeaways | nl2br if problem.lessons_learned.key_takeaways else 'لم يحدد' }}</p>
+                    <p class="text-muted mt-2"><small><i>آخر تحديث للدروس: {{ problem.lessons_learned.last_updated.strftime('%Y-%m-%d %H:%M') }}</i></small></p>
+                {% else %}
+                    <p class="no-details"><i>لم يتم توثيق الدروس المستفادة لهذه المشكلة بعد.</i></p>
+                {% endif %}
+                 <div class="mt-3 pt-2 border-top">
+                    <strong>الحالة الحالية للمشكلة:</strong> <span class="badge {% if problem.status == 'مفتوحة' %} bg-primary {% elif problem.status == 'مغلقة' %} bg-success {% else %} bg-secondary {% endif %}">{{ problem.status }}</span>
+                    {% if problem.date_closed %}
+                        <span class="text-muted ms-2">(تاريخ الإغلاق: {{ problem.date_closed.strftime('%Y-%m-%d %H:%M') }})</span>
+                    {% endif %}
+                </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="actions-bar">
+            <a href="{{ url_for('edit_problem', problem_id=problem.id) }}" class="btn btn-warning"><i class="fas fa-edit"></i> تعديل بيانات المشكلة الرئيسية</a>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> العودة إلى القائمة الرئيسية</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+</html>

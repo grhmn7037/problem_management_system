@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة مؤشرات الأداء للحل - {{ problem.title }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Tahoma', sans-serif; background-color: #f8f9fa; padding-top: 20px; padding-bottom: 20px; }
+        .main-container { max-width: 950px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+        .page-header { text-align: center; margin-bottom: 15px; color: #198754; }
+        .sub-header { text-align: center; color: #6c757d; margin-bottom: 25px; font-size: 1.1rem; }
+        .section-card { background-color: #fff; border: 1px solid #dee2e6; border-radius: .375rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 .125rem .25rem rgba(0,0,0,.075); }
+        .section-card-header { font-size: 1.5rem; color: #495057; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #eee; }
+        .kpi-item-card { background-color: #fdfdff; border: 1px solid #e9ecef; padding: 1rem; margin-bottom: 1.5rem; border-radius: .25rem; }
+        .kpi-item-card h5 { font-size: 1.2rem; color: #0d6efd; margin-bottom: 0.75rem; }
+        .kpi-details p, .measurement-item p { font-size: 0.9rem; margin-bottom: 0.25rem; }
+        .measurements-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #ced4da; }
+        .measurement-item { background-color: #f8f9fa; padding: 0.75rem; border-radius: .25rem; margin-bottom: 0.5rem; border: 1px solid #eee; }
+        .kpi-actions .btn, .measurement-actions .btn { margin-left: 0.3rem; } /* RTL */
+        .solution-info-box { background-color: #e2f0d9; border: 1px solid #c3e6cb; color: #0f5132; padding: 1rem; margin-bottom: 1.5rem; border-radius: .375rem; }
+        .solution-info-box strong { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container main-container">
+        <h1 class="page-header"><i class="fas fa-chart-pie"></i> إدارة مؤشرات الأداء (KPIs)</h1>
+        <div class="sub-header">
+            <p class="mb-1"><strong>للمشكلة:</strong> "{{ problem.title }}"</p>
+            <div class="solution-info-box">
+                <strong>الحل المختار:</strong> {{ chosen_solution.proposed_solution_details.solution_description if chosen_solution.proposed_solution_details else 'تفاصيل الحل غير متاحة' }}
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'danger' else 'danger' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="section-card">
+            <h2 class="section-card-header"><i class="fas fa-plus-circle"></i> إضافة مؤشر أداء جديد (KPI)</h2>
+            <form method="POST" action="{{ url_for('manage_kpis', chosen_solution_id=chosen_solution.id) }}">
+                <div class="mb-3">
+                    <label for="kpi_name_add" class="form-label">اسم مؤشر الأداء:</label>
+                    <input type="text" class="form-control" id="kpi_name_add" name="kpi_name" placeholder="مثال: معدل رضا العملاء..." required>
+                </div>
+                <div class="mb-3">
+                    <label for="kpi_description_add" class="form-label">وصف المؤشر وكيفية قياسه:</label>
+                    <textarea class="form-control" id="kpi_description_add" name="kpi_description" rows="2" placeholder="اشرح ما يقيسه هذا المؤشر..."></textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="target_value_add" class="form-label">القيمة المستهدفة:</label>
+                        <input type="text" class="form-control" id="target_value_add" name="target_value" placeholder="مثال: 90%">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="current_value_baseline_add" class="form-label">القيمة الحالية (خط الأساس):</label>
+                        <input type="text" class="form-control" id="current_value_baseline_add" name="current_value_baseline" placeholder="قيمة المؤشر قبل الحل">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="measurement_unit_add" class="form-label">وحدة القياس:</label>
+                        <input type="text" class="form-control" id="measurement_unit_add" name="measurement_unit" placeholder="مثال: %، يوم، عدد">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="measurement_frequency_add" class="form-label">وتيرة القياس:</label>
+                        <input type="text" class="form-control" id="measurement_frequency_add" name="measurement_frequency" placeholder="مثال: يومي، أسبوعي">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success"><i class="fas fa-plus"></i> إضافة المؤشر</button>
+            </form>
+        </div>
+
+        <hr class="my-4">
+
+        <h2 class="section-card-header"><i class="fas fa-tachometer-alt"></i> مؤشرات الأداء المحددة ({{ kpis|length }})</h2>
+        {% if kpis %}
+            {% for kpi in kpis %}
+                <div class="kpi-item-card">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5>{{ loop.index }}. {{ kpi.kpi_name }}</h5>
+                        <div class="kpi-actions">
+                            <a href="{{ url_for('edit_kpi', kpi_id=kpi.id) }}" class="btn btn-outline-warning btn-sm"><i class="fas fa-edit"></i> تعديل</a>
+                            <form method="POST" action="{{ url_for('delete_kpi', kpi_id=kpi.id) }}" class="d-inline-block">
+                                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('هل أنت متأكد من حذف هذا المؤشر وجميع قياساته؟');"><i class="fas fa-trash-alt"></i> حذف</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="kpi-details">
+                        <p><strong>الوصف:</strong> {{ kpi.kpi_description or 'لا يوجد' }}</p>
+                        <p>
+                            <strong>القيمة المستهدفة:</strong> {{ kpi.target_value or 'غير محدد' }} {{ kpi.measurement_unit or '' }} |
+                            <strong>خط الأساس:</strong> {{ kpi.current_value_baseline or 'غير محدد' }} {{ kpi.measurement_unit or '' }} |
+                            <strong>وتيرة القياس:</strong> {{ kpi.measurement_frequency or 'غير محدد' }}
+                        </p>
+                    </div>
+
+                    <div class="measurements-section">
+                        <h6><i class="fas fa-wave-square"></i> قياسات المؤشر ({{ kpi.measurements.count() }})</h6>
+                        {% if kpi.measurements.all() %}
+                            <ul class="list-unstyled">
+                            {% for measurement in kpi.measurements.order_by(KPIMeasurement.measurement_date.desc()) %}
+                                <li class="measurement-item">
+                                    <div class="d-flex justify-content-between">
+                                        <span><strong>التاريخ:</strong> {{ measurement.measurement_date.strftime('%Y-%m-%d') }} | <strong>القيمة:</strong> {{ measurement.actual_value }} {{ kpi.measurement_unit or '' }}</span>
+                                        <div class="measurement-actions">
+                                            <!-- زر التعديل الجديد للقياس -->
+                                            <a href="{{ url_for('edit_kpi_measurement', measurement_id=measurement.id) }}" class="btn btn-outline-secondary btn-sm btn-sm-custom" title="تعديل القياس"><i class="fas fa-pencil-alt"></i></a>
+                                            <form method="POST" action="{{ url_for('delete_kpi_measurement', measurement_id=measurement.id) }}" class="d-inline-block">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm btn-sm-custom" onclick="return confirm('هل أنت متأكد من حذف هذا القياس؟');" title="حذف القياس"><i class="fas fa-times"></i></button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    {% if measurement.notes %}<p class="mt-1 mb-0"><small><i>ملاحظات: {{ measurement.notes }}</i></small></p>{% endif %}
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted"><em>لم يتم تسجيل أي قياسات لهذا المؤشر بعد.</em></p>
+                        {% endif %}
+
+                        <h6 class="mt-3"><i class="fas fa-plus-square"></i> إضافة قياس جديد</h6>
+                        <form method="POST" action="{{ url_for('add_kpi_measurement', kpi_id=kpi.id) }}">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-4">
+                                    <label for="actual_value_add_{{kpi.id}}" class="form-label form-label-sm">القيمة الفعلية:</label>
+                                    <input type="text" class="form-control form-control-sm" id="actual_value_add_{{kpi.id}}" name="actual_value" placeholder="القيمة المقاسة" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="measurement_date_add_{{kpi.id}}" class="form-label form-label-sm">تاريخ القياس:</label>
+                                    <input type="date" class="form-control form-control-sm" id="measurement_date_add_{{kpi.id}}" name="measurement_date" value="{{ datetime.datetime.utcnow().strftime('%Y-%m-%d') }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="notes_add_{{kpi.id}}" class="form-label form-label-sm">ملاحظات (اختياري):</label>
+                                    <input type="text" class="form-control form-control-sm" id="notes_add_{{kpi.id}}" name="notes" placeholder="أي ملاحظات...">
+                                </div>
+                                <div class="col-md-2 align-self-end">
+                                    <button type="submit" class="btn btn-secondary btn-sm w-100"><i class="fas fa-plus"></i> إضافة</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-light text-center" role="alert">
+                <em>لم يتم تحديد أي مؤشرات أداء لهذا الحل المختار بعد.</em>
+            </div>
+        {% endif %}
+
+        <p class="text-center mt-4">
+            <a href="{{ url_for('problem_details', problem_id=problem.id) }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> العودة إلى تفاصيل المشكلة</a>
+        </p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الحلول المقترحة لـ: {{ problem.title }}</title>
+
+    <!-- Bootstrap CSS via CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Tahoma', sans-serif;
+            background-color: #f8f9fa;
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+        .form-container {
+            max-width: 900px;
+            margin: auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        .form-header {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #fd7e14; /* لون Bootstrap warning (برتقالي) لهذه الصفحة */
+        }
+        .section-divider {
+            margin-top: 2.5rem;
+            margin-bottom: 1.5rem;
+            border-top: 1px solid #dee2e6;
+        }
+        .sub-header {
+            font-size: 1.5rem;
+            color: #495057;
+            margin-bottom: 1rem;
+        }
+        .solution-card {
+            background-color: #fff; /* تغيير الخلفية للتمييز */
+            border: 1px solid #e0e0e0;
+            border-radius: .375rem;
+            padding: 1.25rem; /* زيادة الحشوة */
+            margin-bottom: 1.25rem;
+            box-shadow: 0 .125rem .25rem rgba(0,0,0,.05); /* ظل أخف */
+        }
+        .solution-card h5 { /* كان h4، تم توحيده مع بقية البطاقات */
+            font-size: 1.2rem;
+            margin-bottom: 0.75rem;
+            color: #0d6efd; /* أزرق Bootstrap */
+        }
+        .solution-card p {
+            font-size: 0.95rem;
+            margin-bottom: 0.3rem;
+        }
+        .solution-actions {
+            margin-top: 1rem;
+        }
+        .solution-actions .btn {
+            margin-left: 0.5rem; /* RTL */
+            margin-bottom: 0.5rem; /* للمسافات عند التفاف الأزرار */
+        }
+        .chosen-solution-indicator {
+            font-weight: bold;
+            color: #198754; /* أخضر Bootstrap */
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 1.1em;
+        }
+        .chosen-solution-details {
+            background-color: #d1e7dd; /* أخضر فاتح Bootstrap */
+            padding: 1rem;
+            border-radius: .375rem;
+            margin-top:1rem;
+            border-left: 5px solid #198754;
+        }
+        .chosen-solution-details h5 {
+             color: #0f5132; /* أخضر أغمق للنص */
+        }
+    </style>
+</head>
+<body>
+    <!-- يمكن إضافة شريط التنقل هنا أيضًا للاتساق -->
+    <!-- <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4"> ... </nav> -->
+
+    <div class="container">
+        <div class="form-container">
+            <h1 class="form-header"><i class="fas fa-lightbulb"></i> إدارة الحلول المقترحة</h1>
+            <h4 class="text-center text-muted mb-4">للمشكلة: "{{ problem.title }}"</h4>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category if category != 'danger' else 'danger' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h2 class="sub-header text-white mb-0"><i class="fas fa-plus-circle"></i> إضافة حل مقترح جديد</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('manage_solutions', problem_id=problem.id) }}">
+                        <div class="mb-3">
+                            <label for="solution_description" class="form-label">وصف الحل المقترح:</label>
+                            <textarea class="form-control" id="solution_description" name="solution_description" rows="3" placeholder="صف الحل المقترح بشكل واضح، وما هي الإجراءات التي يتضمنها..." required></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="generation_method" class="form-label">طريقة توليد الحل:</label>
+                                <input type="text" class="form-control" id="generation_method" name="generation_method" placeholder="مثال: عصف ذهني، أفضل الممارسات، اقتراح خبير...">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="estimated_cost" class="form-label">التكلفة التقديرية:</label>
+                                <input type="text" class="form-control" id="estimated_cost" name="estimated_cost" placeholder="مثال: 5000 ريال، منخفضة، لا يوجد">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="estimated_time_to_implement" class="form-label">الوقت التقديري للتنفيذ:</label>
+                            <input type="text" class="form-control" id="estimated_time_to_implement" name="estimated_time_to_implement" placeholder="مثال: أسبوعان، 3 أشهر، فوري">
+                        </div>
+                        <div class="mb-3">
+                            <label for="potential_benefits" class="form-label">الفوائد المحتملة:</label>
+                            <textarea class="form-control" id="potential_benefits" name="potential_benefits" rows="2" placeholder="ما هي النتائج الإيجابية المتوقعة من تطبيق هذا الحل؟"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="potential_risks" class="form-label">المخاطر المحتملة:</label>
+                            <textarea class="form-control" id="potential_risks" name="potential_risks" rows="2" placeholder="ما هي التحديات أو المخاطر التي قد تواجه تنفيذ هذا الحل؟"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> إضافة الحل</button>
+                    </form>
+                </div>
+            </div>
+
+
+            <hr class="section-divider">
+
+            <h2 class="sub-header"><i class="fas fa-list-alt"></i> الحلول المقترحة الحالية ({{ proposed_solutions|length }})</h2>
+            {% if proposed_solutions %}
+                {% for sol in proposed_solutions %}
+                    <div class="solution-card">
+                        {% if sol.is_chosen %}
+                            <span class="chosen-solution-indicator"><i class="fas fa-check-circle"></i> تم اختيار هذا الحل</span>
+                        {% endif %}
+                        <h5>{{ loop.index }}. {{ sol.solution_description }}</h5>
+                        <p><strong>طريقة التوليد:</strong> {{ sol.generation_method or 'غير محدد' }}</p>
+                        <p><strong>التكلفة التقديرية:</strong> {{ sol.estimated_cost or 'غير محدد' }}</p>
+                        <p><strong>الوقت التقديري للتنفيذ:</strong> {{ sol.estimated_time_to_implement or 'غير محدد' }}</p>
+                        <p><strong>الفوائد المحتملة:</strong> {{ sol.potential_benefits or 'لا يوجد' }}</p>
+                        <p><strong>المخاطر المحتملة:</strong> {{ sol.potential_risks or 'لا يوجد' }}</p>
+
+                        <div class="solution-actions">
+                            {% if not sol.is_chosen %}
+                            <form method="POST" action="{{ url_for('choose_solution', problem_id=problem.id, solution_id=sol.id) }}" style="display: inline-block;" class="mb-2">
+                                 <div class="mb-2">
+                                    <label for="justification_for_choice_{{sol.id}}" class="form-label небольшая-метка" style="font-size:0.9em;">مبررات اختيار هذا الحل (اختياري):</label>
+                                    <textarea class="form-control form-control-sm" id="justification_for_choice_{{sol.id}}" name="justification_for_choice" rows="2" placeholder="لماذا يعتبر هذا الحل هو الأنسب؟"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-check"></i> اختيار هذا الحل</button>
+                            </form>
+                            {% endif %}
+
+                            <form method="POST" action="{{ url_for('delete_proposed_solution', problem_id=problem.id, solution_id=sol.id) }}" style="display: inline-block;">
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('هل أنت متأكد من حذف هذا الحل المقترح؟');"><i class="fas fa-trash-alt"></i> حذف</button>
+                            </form>
+                            <!-- (يمكن إضافة رابط لتعديل الحل المقترح لاحقًا) -->
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-light text-center" role="alert">
+                    <em>لم يتم إضافة أي حلول مقترحة لهذه المشكلة بعد.</em>
+                </div>
+            {% endif %}
+
+            <hr class="section-divider">
+
+            <h2 class="sub-header"><i class="fas fa-star"></i> الحلول المختارة حاليًا ({{ problem.chosen_solutions.count() }})</h2>
+            {% if problem.chosen_solutions.all() %}
+                {% for chosen_sol_entry in problem.chosen_solutions.order_by(ChosenSolution.date_chosen.desc()) %}
+                     <div class="chosen-solution-details">
+                        <h5><i class="fas fa-award"></i> {{ chosen_sol_entry.proposed_solution_details.solution_description if chosen_sol_entry.proposed_solution_details else 'حل محذوف أو غير مرتبط' }}</h5>
+                        <p><strong>تاريخ الاختيار:</strong> {{ chosen_sol_entry.date_chosen.strftime('%Y-%m-%d %H:%M') }}</p>
+                        <p><strong>مبررات الاختيار:</strong> {{ chosen_sol_entry.justification_for_choice or 'لم تقدم مبررات' }}</p>
+                        <p><strong>حالة الموافقة:</strong> {{ chosen_sol_entry.approval_status or 'غير محدد' }}</p>
+                         <form method="POST" action="{{ url_for('unchoose_solution', problem_id=problem.id, chosen_solution_id=chosen_sol_entry.id) }}" style="display: inline-block;">
+                            <button type="submit" class="btn btn-warning btn-sm"><i class="fas fa-times"></i> إلغاء الاختيار</button>
+                        </form>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-light text-center" role="alert">
+                    <em>لم يتم اختيار أي حل لهذه المشكلة بعد.</em>
+                </div>
+            {% endif %}
+
+            <p class="text-center mt-4">
+                <a href="{{ url_for('problem_details', problem_id=problem.id) }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> العودة إلى تفاصيل المشكلة</a>
+            </p>
+        </div>
+    </div> <!-- نهاية .container -->
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+</html>
